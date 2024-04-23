@@ -18,6 +18,8 @@ MAX_DEPTH = 10000  # 10000mm
 CENTER = 0
 RIGHT = 1
 LEFT = -1
+BLOBRED = 2
+BLOBGREEN = -2
 
 def get_pos_percentage(perc):
   perc = min(max(perc, -1), 1) / 2 + 0.5
@@ -35,7 +37,7 @@ async def image_stream(websocket, path):
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
 
-    motor.value = -0.08
+    motor.value = -0.065
 
     try:
         color_profile, depth_profile = get_profiles(pipeline)
@@ -97,7 +99,12 @@ async def image_stream(websocket, path):
             # find relative coordinates
             # np.arange()
 
-            classifiedLines = []
+            classifiedobjects = []
+
+            for c in contoursG:
+                classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
+            for c in contoursR:
+                classifiedobjects += [[BLOBRED, c[1], c[0]]]
 
             for line in newLines:
                 x1, y1, x2, y2 = line
@@ -109,34 +116,43 @@ async def image_stream(websocket, path):
                 if abs((x1 + x2) / 2 - 320) < 100:
                     # print("found center wall ^^")
 
-                    classifiedLines += [[CENTER, wall_dist]]
+                    classifiedobjects += [[CENTER, wall_dist]]
                 
                 elif (x1 + x2) / 2 - 320 > 0:
                     # print("right wall")
-                    classifiedLines += [[RIGHT, wall_dist]]
+                    classifiedobjects += [[RIGHT, wall_dist]]
                 else:
                     # print("left wall")
-                    classifiedLines += [[LEFT, wall_dist]]
+                    classifiedobjects += [[LEFT, wall_dist]]
                 
             steeringInputs = []
 
-            for l in classifiedLines:
-                coeff = 1/(l[1]/3800)
-                if l[0] == CENTER:
-                    if l[1] < 900:
+            for object in classifiedobjects:
+                coeff = 1/(object[1]/3800)
+                if object[0] == CENTER:
+                    if object[1] < 1000:
                         steeringInputs += [-1*coeff]
 
                         print(f"CENTER WALL with {coeff}")
-                if l[0] == RIGHT:
-                    if l[1] < 800:
+                if object[0] == RIGHT:
+                    if object[1] < 900:
                         steeringInputs += [-1*coeff]
                         print(f"RIGHT WALL with {coeff}")
-                if l[0] == LEFT:
-                    if l[1] < 800:
-                        steeringInputs += [1*coeff]
+                if object[0] == LEFT:
+                    if object[1] < 1200:
+                        steeringInputs += [1.25*coeff]
                         print(f"LEFT WALL with {coeff}")
+                
+                if object[0] == BLOBRED:
+                    if object[2] > 200:
+                        pass
+                        # steeringInputs += [15]
+                if object[0] == BLOBGREEN:
+                    if object[2] < 440:
+                        pass
+                        # steeringInputs += [-15]
 
-            print(steer := np.sum(np.array(steeringInputs)) / 18.0)
+            print(steer := np.sum(np.array(steeringInputs)) / 16.0)
 
             steering.value = get_pos_percentage(steer)
 
@@ -151,8 +167,8 @@ async def image_stream(websocket, path):
 
             
 
-            # a_b64 = encode_image(viz)
-            a_b64 = encode_image(greyImg)
+            a_b64 = encode_image(viz)
+            # a_b64 = encode_image(greyImg)
             b_b64 = encode_image(limg)
             # b_b64 = encode_depth(depth_data)
 
