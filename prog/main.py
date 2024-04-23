@@ -84,8 +84,11 @@ async def image_stream(websocket, path):
 
             for line in newLines:
                 x1, y1, x2, y2 = line
-                estimateWallDistance(x1, y1)
-                estimateWallDistance(x2, y2)
+                d1 = estimateWallDistance(x1, y1)
+                d2 = estimateWallDistance(x2, y2)
+                limg = cv2.putText(limg, f"{round(d1)}", (x1,y1), 0, 0.5, (255, 255, 255))
+                limg = cv2.putText(limg, f"{round(d2)}", (x2,y2), 0, 0.5, (255, 255, 255))
+            
             
             # end relative coords
 
