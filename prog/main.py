@@ -81,6 +81,7 @@ async def image_stream(websocket, path):
             # end viz
             
             # find relative coordinates
+            # np.arange()
 
             for line in newLines:
                 x1, y1, x2, y2 = line
