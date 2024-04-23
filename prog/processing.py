@@ -27,17 +27,17 @@ def filter(color_image):
   # edge detection
   lower = 30
   upper = 90
-  blackimg = cv2.inRange(blurredImg, 0, 25)
+  blackimg = cv2.inRange(blurredImg, 0, grayThresh)
   edgesImg = cv2.Canny(blackimg, lower, upper, 3)
   # combine images
-  return [edgesImg, blurredG, blurredR]
+  return [edgesImg, blurredG, blurredR, blackimg]
 
 
 def findWallLines(edgesImg):
     lines = cv2.HoughLinesP(edgesImg, 1, np.pi/360,
-                            houghparams['threshold'],
-                            houghparams['minLineLength'],
-                            houghparams['maxLineGap'])
+                            threshold = houghparams['threshold'],
+                            minLineLength = houghparams['minLineLength'],
+                            maxLineGap = houghparams['maxLineGap'])
     if lines is not None:
         lines = list(lines)
     else:
@@ -51,6 +51,7 @@ def findWallLines(edgesImg):
         x1, y1, x2, y2 = line[0]
         if y1 == 0 or y2 == 0:
             continue
+            pass
         if (abs(y1 - centerheight) > centerstripheight and abs(y2 - centerheight) > centerstripheight):
             continue
             pass
@@ -80,3 +81,31 @@ def getContours(imgIn: np.ndarray):
                 width = math.ceil(math.sqrt(size) * contourSizeConstant)
                 processedContours.append([x, width])
     return processedContours
+
+
+def estimateWallDistance(x, y):
+    """
+    Based on Intercept theorem, estimate distance of a point on a wall d(x, y, wall_height, focal_length, camera_intrinsics)
+
+    d = (100 : h) * f
+
+
+
+    SC: Focal distance                              to be measured mm
+    SD: tbd distance                                =? mm
+    AC: Hight on sensor / in pixels*dotspermm       =(var)mm
+    BD: Wall hight                                  = 100 mm
+
+    """
+
+    wallheight = (y-centerheight) * 2
+    if (wallheight <= 2): return np.Inf
+
+    # print(1000 / (1/wallheight)) # calibration
+
+    distancefactor = 42000.0
+    d = (1 / wallheight) * distancefactor
+
+    print(d)
+
+    return d

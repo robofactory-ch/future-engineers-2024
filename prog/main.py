@@ -1,14 +1,12 @@
 import asyncio
 import websockets
-from pyorbbecsdk import Pipeline, FrameSet, Config, OBSensorType, OBFormat, OBError, VideoStreamProfile
+from pyorbbecsdk import Pipeline, FrameSet, Config, OBSensorType, OBAlignMode
 import cv2
 import numpy as np
 from utils import frame_to_bgr_image
-from processing import filter, getContours, findWallLines
+from processing import filter, getContours, findWallLines, estimateWallDistance
 import base64
-import time
 import json
-import math
 
 ESC_KEY = 27
 PRINT_INTERVAL = 1  # seconds
@@ -21,6 +19,7 @@ async def image_stream(websocket, path):
 
     global redMax, redMin, greenMax, greenMin
     config = Config()
+    config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
 
     try:
@@ -51,7 +50,7 @@ async def image_stream(websocket, path):
 
 
 
-            [edgesImg, blurredG, blurredR] = filter(color_image)
+            [edgesImg, blurredG, blurredR, greyImg] = filter(color_image)
 
 
 
@@ -85,6 +84,8 @@ async def image_stream(websocket, path):
 
             for line in newLines:
                 x1, y1, x2, y2 = line
+                estimateWallDistance(x1, y1)
+                estimateWallDistance(x2, y2)
             
             # end relative coords
 
@@ -92,7 +93,8 @@ async def image_stream(websocket, path):
 
             
 
-            a_b64 = encode_image(viz)
+            # a_b64 = encode_image(viz)
+            a_b64 = encode_image(greyImg)
             b_b64 = encode_image(limg)
             # b_b64 = encode_depth(depth_data)
 
@@ -119,10 +121,8 @@ async def image_stream(websocket, path):
 def get_profiles(pipeline):
     profile_list = pipeline.get_stream_profile_list(OBSensorType.COLOR_SENSOR)
     color_profile = profile_list.get_default_video_stream_profile()
-
     profile_list = pipeline.get_stream_profile_list(OBSensorType.DEPTH_SENSOR)
     depth_profile = profile_list.get_default_video_stream_profile()
-
     return color_profile, depth_profile
 
 def process_depth_frame(depth_frame):
