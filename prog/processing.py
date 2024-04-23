@@ -106,6 +106,6 @@ def estimateWallDistance(x, y):
     distancefactor = 42000.0
     d = (1 / wallheight) * distancefactor
 
-    print(d)
+    # print(d)
 
     return d

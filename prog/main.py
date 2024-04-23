@@ -7,13 +7,26 @@ from utils import frame_to_bgr_image
 from processing import filter, getContours, findWallLines, estimateWallDistance
 import base64
 import json
+from gpiozero import Servo
+from config import *
 
 ESC_KEY = 27
 PRINT_INTERVAL = 1  # seconds
 MIN_DEPTH = 20  # 20mm
 MAX_DEPTH = 10000  # 10000mm
 
-from config import *
+CENTER = 0
+RIGHT = 1
+LEFT = -1
+
+def get_pos_percentage(perc):
+  perc = min(max(perc, -1), 1) / 2 + 0.5
+  return steeringMaxLeft + steeringRange*perc
+
+steering = Servo("GPIO12", initial_value=get_pos_percentage(0))
+motor = Servo("GPIO13", initial_value=0.06)
+
+direction = 1
 
 async def image_stream(websocket, path):
 
@@ -21,6 +34,8 @@ async def image_stream(websocket, path):
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
+
+    motor.value = -0.08
 
     try:
         color_profile, depth_profile = get_profiles(pipeline)
@@ -82,12 +97,52 @@ async def image_stream(websocket, path):
             # find relative coordinates
             # np.arange()
 
+            classifiedLines = []
+
             for line in newLines:
                 x1, y1, x2, y2 = line
                 d1 = estimateWallDistance(x1, y1)
                 d2 = estimateWallDistance(x2, y2)
-                limg = cv2.putText(limg, f"{round(d1)}", (x1,y1), 0, 0.5, (255, 255, 255))
-                limg = cv2.putText(limg, f"{round(d2)}", (x2,y2), 0, 0.5, (255, 255, 255))
+
+                wall_dist = (d1 + d2) / 2
+
+                if abs((x1 + x2) / 2 - 320) < 100:
+                    # print("found center wall ^^")
+
+                    classifiedLines += [[CENTER, wall_dist]]
+                
+                elif (x1 + x2) / 2 - 320 > 0:
+                    # print("right wall")
+                    classifiedLines += [[RIGHT, wall_dist]]
+                else:
+                    # print("left wall")
+                    classifiedLines += [[LEFT, wall_dist]]
+                
+            steeringInputs = []
+
+            for l in classifiedLines:
+                coeff = 1/(l[1]/3800)
+                if l[0] == CENTER:
+                    if l[1] < 900:
+                        steeringInputs += [-1*coeff]
+
+                        print(f"CENTER WALL with {coeff}")
+                if l[0] == RIGHT:
+                    if l[1] < 800:
+                        steeringInputs += [-1*coeff]
+                        print(f"RIGHT WALL with {coeff}")
+                if l[0] == LEFT:
+                    if l[1] < 800:
+                        steeringInputs += [1*coeff]
+                        print(f"LEFT WALL with {coeff}")
+
+            print(steer := np.sum(np.array(steeringInputs)) / 18.0)
+
+            steering.value = get_pos_percentage(steer)
+
+
+                # limg = cv2.putText(limg, f"{round(d1)}", (x1,y1), 0, 0.5, (255, 255, 255))
+                # limg = cv2.putText(limg, f"{round(d2)}", (x2,y2), 0, 0.5, (255, 255, 255))
             
             
             # end relative coords
@@ -111,6 +166,8 @@ async def image_stream(websocket, path):
     except KeyboardInterrupt:
         pass
     finally:
+        motor.value = 0.06
+        steering.value = get_pos_percentage(0)
         pipeline.stop()
 
 
@@ -157,6 +214,8 @@ def encode_depth(depth_data):
     retval, buffer = cv2.imencode('.jpg', depth_image)
     base64_str = base64.b64encode(buffer).decode('utf-8')
     return base64_str
+
+
 
 start_server = websockets.serve(image_stream, "0.0.0.0", 8765)
 
