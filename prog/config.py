@@ -26,3 +26,8 @@ depthIntrinsics = [67.9 / 180 * pi, 45.3 / 180 * pi, ]
 colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 
 grayThresh = 25
+
+
+steeringMaxLeft = -0.1 # needs to be smaller
+sterringMaxRight = 0.1
+steeringRange = abs(steeringMaxLeft-sterringMaxRight)
