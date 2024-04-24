@@ -101,10 +101,10 @@ async def image_stream(websocket, path):
 
             classifiedobjects = []
 
-            for c in contoursG:
-                classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
-            for c in contoursR:
-                classifiedobjects += [[BLOBRED, c[1], c[0]]]
+            # for c in contoursG:
+            #     classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
+            # for c in contoursR:
+            #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
 
             for line in newLines:
                 x1, y1, x2, y2 = line
