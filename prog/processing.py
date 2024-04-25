@@ -34,7 +34,8 @@ def filter(color_image):
 
 
 def findWallLines(edgesImg):
-    """Finds the lines, that correspond to the walls of the game field. Also adjusts the current centerheight to match with the suspension state of the car
+    """Finds the lines, that correspond to the walls of the game field.
+    Adjusts the current centerheight to match with the suspension state of the car
 
     Args:
         edgesImg (_type_): Cannied image showing the edges
@@ -75,39 +76,59 @@ def findWallLines(edgesImg):
             pass
         filteredLines.append([[x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY], [slope]])
     
-    # centerhights = []
     mirroredLines = []
+    # centerheights = [centerheight]
+    # newcenterheight = centerheight
+    # longestI = -1
+    # longest = 0
     # find corrected centerheight, this changes depending on how "squatted" the car is in the rear suspension. alternative: Replace shocks with solid parts
-    for [[x1, y1, x2, y2], [slope]] in filteredLines:
+    for i, [[x1, y1, x2, y2], [slope]] in enumerate(filteredLines):
         slope = -slope  # we're searching for the same but negative slope (because of parallax)
         smallestDiff = float('inf')
-        smallestI = -1
-        for i, [[X1, Y1, X2, Y2], [SLOPE]] in enumerate(slopedLines):
+        smallestj = -1
+        for j, [[X1, Y1, X2, Y2], [SLOPE]] in enumerate(slopedLines):
             diff = abs(slope - SLOPE)
-            if diff < smallestDiff:
-                smallestI = i
-                smallestDiff = diff
+            if diff < smallestDiff and abs(y1 - Y1) > 4:
+                if (y1 - linematchingTolerance <= Y1 <= y2 + linematchingTolerance or y2 - linematchingTolerance <= Y1 <= y1 + linematchingTolerance) and \
+           (y1 - linematchingTolerance <= Y2 <= y2 + linematchingTolerance or y2 - linematchingTolerance <= Y2 <= y1 + linematchingTolerance):
+                    smallestj = j
+                    smallestDiff = diff
         # Get the line with the most similar slope
-        [X1, Y1, X2, Y2], [SLOPE] = slopedLines[smallestI]
+        [X1, Y1, X2, Y2], [SLOPE] = slopedLines[smallestj]
 
         # Find the endpoints with the same x-coordinate as the original line's endpoints
-        if abs(X1 - x2) < abs(X2 - x2):
-            u1 = X1
-            v1 = Y1 + ((Y2 - Y1) / (X2 - X1)) * (x1 - X1)
-            u2 = X1
-            v2 = Y1 + ((Y2 - Y1) / (X2 - X1)) * (x2 - X1)
+
+        if (X2 < X1):
+            u1 = x1
+            u2 = x2
+            m = (Y2-Y1) / (X2-X1)
+            if math.isnan(m):
+                continue
+            q = Y1 - m * X1
+            v1 = round(u1 * m + q)
+            v2 = round(u2 * m + q)
         else:
-            u1 = X2
-            v1 = Y2 + ((Y1 - Y2) / (X1 - X2)) * (x1 - X2)
-            u2 = X2
-            v2 = Y2 + ((Y1 - Y2) / (X1 - X2)) * (x2 - X2)
+            u1 = x2
+            u2 = x1
+            m = (Y1-Y2) / (X1-X2)
+            if math.isnan(m):
+                continue
+            q = Y2 - m * X2
+            v1 = round(u1 * m + q)
+            v2 = round(u2 * m + q)
 
         # Now you have the coordinates u1, v1, u2, v2
-        mirroredLines.append([[u1 + depthOffsetX, v1 + depthOffsetY, u2 + depthOffsetX, v2 + depthOffsetY], [SLOPE]]) 
+        mirroredLines.append([[u1 + depthOffsetX, v1 + depthOffsetY, u2 + depthOffsetX, v2 + depthOffsetY], [SLOPE]])
+        # l = (x2-x1)**2 + (y2-y1)**2
+        # if l > longest:
+        #     longestI = i
+        #     longest = l
 
+    # # find the pair of longest lines, within reject criteria (not with an absurdly high hight difference)
+    # if longestI != -1:
+    #     print(newcenterheight := np.mean([(mirroredLines[i][0][1]+filteredLines[i][0][1])/2, (mirroredLines[i][0][3]+filteredLines[i][0][3])/2]))
 
-
-    return filteredLines, mirroredLines
+    return filteredLines, mirroredLines, lines
 
 def getContours(imgIn: np.ndarray):
     edges = cv2.Canny(cv2.medianBlur(cv2.copyMakeBorder(imgIn[30:], 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0), 3), 30, 200)
