@@ -9,6 +9,7 @@ import base64
 import json
 from gpiozero import Servo
 from config import *
+from datetime import datetime
 
 ESC_KEY = 27
 PRINT_INTERVAL = 1  # seconds
@@ -28,11 +29,11 @@ def get_pos_percentage(perc):
 steering = Servo("GPIO12", initial_value=get_pos_percentage(0))
 motor = Servo("GPIO13", initial_value=0.06)
 
-direction = 1
+direction = 0
 
 async def image_stream(websocket, path):
 
-    global redMax, redMin, greenMax, greenMin
+    global redMax, redMin, greenMax, greenMin, direction
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
@@ -105,6 +106,8 @@ async def image_stream(websocket, path):
             #     classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
             # for c in contoursR:
             #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
+            seen_left_wall = False
+            seen_right_wall = False
 
             for line in newLines:
                 x1, y1, x2, y2 = line
@@ -113,34 +116,47 @@ async def image_stream(websocket, path):
 
                 wall_dist = (d1 + d2) / 2
 
-                if abs((x1 + x2) / 2 - 320) < 100:
-                    # print("found center wall ^^")
+                if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
+                    print("found center wall", np.arctan2(y2-y1, x2-x1))
 
                     classifiedobjects += [[CENTER, wall_dist]]
                 
                 elif (x1 + x2) / 2 - 320 > 0:
-                    # print("right wall")
+                    print("right wall")
+                    seen_right_wall = True
                     classifiedobjects += [[RIGHT, wall_dist]]
                 else:
-                    # print("left wall")
+                    print("left wall")
+                    seen_left_wall = True
                     classifiedobjects += [[LEFT, wall_dist]]
+            
+            if direction == 0:
+                if seen_left_wall:
+                    direction = 1
+                    print("[ROUNDDIRECTION SET CW]")
+                if seen_right_wall:
+                    direction = -1
+                    print("[ROUNDDIRECTION SET CC]")
+
                 
             steeringInputs = []
 
             for object in classifiedobjects:
                 coeff = 1/(object[1]/3800)
+                wi = 0 if direction <= 0 else 1
+
                 if object[0] == CENTER:
-                    if object[1] < 1000:
-                        steeringInputs += [-1*coeff]
+                    if object[1] < 1100:
+                        steeringInputs += [weigths[wi][0]*coeff]
 
                         print(f"CENTER WALL with {coeff}")
                 if object[0] == RIGHT:
                     if object[1] < 900:
-                        steeringInputs += [-1*coeff]
+                        steeringInputs += [weigths[wi][1]*coeff]
                         print(f"RIGHT WALL with {coeff}")
                 if object[0] == LEFT:
                     if object[1] < 1200:
-                        steeringInputs += [1.25*coeff]
+                        steeringInputs += [weigths[wi][2]*coeff]
                         print(f"LEFT WALL with {coeff}")
                 
                 if object[0] == BLOBRED:

@@ -28,6 +28,10 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
+weigths = [[-1, -1, 0.75],
+          [0.75, 1, 1],
+         ]
+
 steeringMaxLeft = -0.88 # needs to be smaller
 sterringMaxRight = 0.65
 steeringRange = abs(steeringMaxLeft-sterringMaxRight)

@@ -103,9 +103,9 @@ def estimateWallDistance(x, y):
 
     # print(1000 / (1/wallheight)) # calibration
 
-    distancefactor = 42000.0
+    distancefactor = 36000.0
     d = (1 / wallheight) * distancefactor
 
-    # print(d)
+    print(d)
 
     return d
