@@ -8,7 +8,7 @@ greenMax = (80, 255, 255)
 houghparams = {
   'threshold': 70,
   'minLineLength': 20,
-  'maxLineGap': 80
+  'maxLineGap': 30
 }
 
 centerstripheight = 80
@@ -27,7 +27,7 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 
 grayThresh = 25
 
-linematchingTolerance = 20
+linematchingTolerance = 0
 
 steeringMaxLeft = -0.88 # needs to be smaller
 sterringMaxRight = 0.65

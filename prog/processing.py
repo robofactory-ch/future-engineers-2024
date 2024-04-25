@@ -23,6 +23,7 @@ def filter(color_image):
   blurredR = cv2.medianBlur(rMask, 5)
   blurredG = cv2.medianBlur(gMask, 5)
   grayImage = cv2.cvtColor(color_image, cv2.COLOR_RGB2GRAY)
+
   blurredImg = cv2.GaussianBlur(grayImage, (3, 3), 0)
   # edge detection
   lower = 30
@@ -75,7 +76,6 @@ def findWallLines(edgesImg):
             continue
             pass
         filteredLines.append([[x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY], [slope]])
-    
     mirroredLines = []
     # centerheights = [centerheight]
     # newcenterheight = centerheight
@@ -84,6 +84,7 @@ def findWallLines(edgesImg):
     # find corrected centerheight, this changes depending on how "squatted" the car is in the rear suspension. alternative: Replace shocks with solid parts
     for i, [[x1, y1, x2, y2], [slope]] in enumerate(filteredLines):
         slope = -slope  # we're searching for the same but negative slope (because of parallax)
+
         smallestDiff = float('inf')
         smallestj = -1
         for j, [[X1, Y1, X2, Y2], [SLOPE]] in enumerate(slopedLines):
@@ -102,20 +103,25 @@ def findWallLines(edgesImg):
             u1 = x1
             u2 = x2
             m = (Y2-Y1) / (X2-X1)
-            if math.isnan(m):
-                continue
             q = Y1 - m * X1
-            v1 = round(u1 * m + q)
-            v2 = round(u2 * m + q)
+
+            v1 = u1 * m + q
+            v2 = u2 * m + q
+            if math.isnan(v1) or math.isnan(v2):
+                continue
+            v1 = round(v2)
+            v2 = round(v2)
         else:
             u1 = x2
             u2 = x1
             m = (Y1-Y2) / (X1-X2)
-            if math.isnan(m):
-                continue
             q = Y2 - m * X2
-            v1 = round(u1 * m + q)
-            v2 = round(u2 * m + q)
+            v1 = u1 * m + q
+            v2 = u2 * m + q
+            if math.isnan(v1) or math.isnan(v2):
+                continue
+            v1 = round(v2)
+            v2 = round(v2)
 
         # Now you have the coordinates u1, v1, u2, v2
         mirroredLines.append([[u1 + depthOffsetX, v1 + depthOffsetY, u2 + depthOffsetX, v2 + depthOffsetY], [SLOPE]])

@@ -67,14 +67,14 @@ def cast_ray_from_screen_pixel(screen_x, screen_y, screen_width, screen_height, 
 
 if __name__ == "__main__":
   # Example usage
-  screen_width = 800
-  screen_height = 600
-  horizontal_fov_degrees = 90
-  vertical_fov_degrees = 60
+  screen_width = 640
+  screen_height = 480
+  horizontal_fov_degrees = 71.5
+  vertical_fov_degrees = 56.7
   camera_position = np.array([0.0, 0.0, 0.0])
-  target = np.array([0, 0, -1])  # Looking along negative z-axis
+  target = np.array([0, 0, 1])
   up = np.array([0, 1, 0])
 
   # Cast ray from pixel (400, 300)
-  ray_direction = cast_ray_from_screen_pixel(400, 100, screen_width, screen_height, horizontal_fov_degrees, vertical_fov_degrees, camera_position, target, up)
+  ray_direction = cast_ray_from_screen_pixel(319, 0, screen_width, screen_height, horizontal_fov_degrees, vertical_fov_degrees, camera_position, target, up)
   print("Ray direction:", ray_direction)
