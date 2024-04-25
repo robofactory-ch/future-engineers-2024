@@ -31,7 +31,7 @@ motor = Servo("GPIO13", initial_value=0.06)
 
 direction = 0
 
-async def image_stream(websocket, path):
+async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     global redMax, redMin, greenMax, greenMin, direction
 
@@ -86,24 +86,27 @@ async def image_stream(websocket, path):
 
             newLines = findWallLines(edgesImg)
 
-            
-            viz = (np.dstack((np.zeros(blurredG.shape),blurredG, blurredR)) * 255.999) .astype(np.uint8)
 
-            for c in contoursR:
-                viz = cv2.line(viz, (c[0], 0), (c[0], 479), (0, 0, 255), 1)
-            for c in contoursG:
-                viz = cv2.line(viz, (c[0], 0), (c[0], 479), (0, 255, 0), 1)
 
             # Line visualizer
             colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0)]
             limg = np.zeros(color_image.shape)
-            limg = cv2.applyColorMap(depth_data, cv2.COLORMAP_JET)
+            # limg = cv2.applyColorMap(depth_data, cv2.COLORMAP_JET)
             
             # centerline
             limg = cv2.line(limg, (0, centerheight + depthOffsetY), (640, centerheight + depthOffsetY), (0, 0, 255), 2)
             for i, line in enumerate(newLines):
                 x1, y1, x2, y2 = line
                 limg = cv2.line(limg, (x1, y1), (x2, y2), colors[1%4], 4)
+            
+            viz = (np.dstack((np.zeros(blurredG.shape), blurredG, blurredR)) * 255.999) .astype(np.uint8)
+            for c in contoursR:
+                viz = cv2.line(viz, (c[0], 0), (c[0], 479), (0, 0, 255), 1)
+            for c in contoursG:
+                viz = cv2.line(viz, (c[0], 0), (c[0], 479), (0, 255, 0), 1)
+
+            viz = cv2.addWeighted(viz, 1, limg, 1, 0, dtype=0)
+            
             # end viz
             
             # find relative coordinates
@@ -111,10 +114,10 @@ async def image_stream(websocket, path):
 
             classifiedobjects = []
 
-            # for c in contoursG:
-            #     classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
-            # for c in contoursR:
-            #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
+            for c in contoursG:
+                classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
+            for c in contoursR:
+                classifiedobjects += [[BLOBRED, c[1], c[0]]]
             seen_left_wall = False
             seen_right_wall = False
             seen_center_wall = False
@@ -176,25 +179,17 @@ async def image_stream(websocket, path):
                         # print(f"LEFT WALL with {coeff}")
                 
                 if object[0] == BLOBRED:
-                    if object[2] > 200:
-                        pass
-                        # steeringInputs += [15]
+                    if object[2] > 50:
+                        # pass
+                        steeringInputs += [15]
                 if object[0] == BLOBGREEN:
-                    if object[2] < 440:
-                        pass
-                        # steeringInputs += [-15]
+                    if object[2] < 590:
+                        # pass
+                        steeringInputs += [-15]
 
             steer = np.sum(np.array(steeringInputs)) / 16.0
 
             steering.value = get_pos_percentage(steer)
-
-
-                # limg = cv2.putText(limg, f"{round(d1)}", (x1,y1), 0, 0.5, (255, 255, 255))
-                # limg = cv2.putText(limg, f"{round(d2)}", (x2,y2), 0, 0.5, (255, 255, 255))
-            
-            
-            # end relative coords
-
             
             if (time.time_ns() // 1000000 - last_center_wall_at) > new_center_timeout:
                 print(f"{(time.time_ns() // 1000000 - last_center_wall_at)}ms not taking because timeout is at {(time.time_ns() // 1000000 - last_quadrant_at)}")
@@ -209,14 +204,14 @@ async def image_stream(websocket, path):
 
             a_b64 = encode_image(viz)
             # a_b64 = encode_image(greyImg)
-            b_b64 = encode_image(limg)
+            # b_b64 = encode_image(color_image)
             # b_b64 = encode_depth(depth_data)
 
             # print("Sending frames to client...")
             data = {
-                # "a": a_b64,
-                "b": b_b64
-            }            
+                "a": a_b64,
+                # "b": b_b64
+            }
             await websocket.send(json.dumps(data))
             
     except KeyboardInterrupt:
@@ -225,14 +220,6 @@ async def image_stream(websocket, path):
         motor.value = 0.06
         steering.value = get_pos_percentage(0)
         pipeline.stop()
-
-
-
-
-
-
-
-
 
 def get_profiles(pipeline):
     profile_list = pipeline.get_stream_profile_list(OBSensorType.COLOR_SENSOR)
@@ -245,8 +232,6 @@ def process_depth_frame(depth_frame):
     width = depth_frame.get_width()
     height = depth_frame.get_height()
     scale = depth_frame.get_depth_scale()
-    
-        
 
     depth_data = np.frombuffer(depth_frame.get_data(), dtype=np.uint16)
     depth_data = depth_data.reshape((height, width))
@@ -272,9 +257,7 @@ def encode_depth(depth_data):
     return base64_str
 
 
-
 start_server = websockets.serve(image_stream, "0.0.0.0", 8765)
-
 asyncio.get_event_loop().run_until_complete(start_server)
 asyncio.get_event_loop().run_forever()
 
