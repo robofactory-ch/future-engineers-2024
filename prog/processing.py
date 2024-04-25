@@ -3,6 +3,8 @@ import numpy as np
 import math
 from config import *
 
+from camera_projection import cast_ray_from_screen_pixel
+
 def filter(color_image):
 
   hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
@@ -76,65 +78,8 @@ def findWallLines(edgesImg):
             continue
             pass
         filteredLines.append([[x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY], [slope]])
-    mirroredLines = []
-    # centerheights = [centerheight]
-    # newcenterheight = centerheight
-    # longestI = -1
-    # longest = 0
-    # find corrected centerheight, this changes depending on how "squatted" the car is in the rear suspension. alternative: Replace shocks with solid parts
-    for i, [[x1, y1, x2, y2], [slope]] in enumerate(filteredLines):
-        slope = -slope  # we're searching for the same but negative slope (because of parallax)
 
-        smallestDiff = float('inf')
-        smallestj = -1
-        for j, [[X1, Y1, X2, Y2], [SLOPE]] in enumerate(slopedLines):
-            diff = abs(slope - SLOPE)
-            if diff < smallestDiff and abs(y1 - Y1) > 4:
-                if (y1 - linematchingTolerance <= Y1 <= y2 + linematchingTolerance or y2 - linematchingTolerance <= Y1 <= y1 + linematchingTolerance) and \
-           (y1 - linematchingTolerance <= Y2 <= y2 + linematchingTolerance or y2 - linematchingTolerance <= Y2 <= y1 + linematchingTolerance):
-                    smallestj = j
-                    smallestDiff = diff
-        # Get the line with the most similar slope
-        [X1, Y1, X2, Y2], [SLOPE] = slopedLines[smallestj]
-
-        # Find the endpoints with the same x-coordinate as the original line's endpoints
-
-        if (X2 < X1):
-            u1 = x1
-            u2 = x2
-            m = (Y2-Y1) / (X2-X1)
-            q = Y1 - m * X1
-
-            v1 = u1 * m + q
-            v2 = u2 * m + q
-            if math.isnan(v1) or math.isnan(v2):
-                continue
-            v1 = round(v2)
-            v2 = round(v2)
-        else:
-            u1 = x2
-            u2 = x1
-            m = (Y1-Y2) / (X1-X2)
-            q = Y2 - m * X2
-            v1 = u1 * m + q
-            v2 = u2 * m + q
-            if math.isnan(v1) or math.isnan(v2):
-                continue
-            v1 = round(v2)
-            v2 = round(v2)
-
-        # Now you have the coordinates u1, v1, u2, v2
-        mirroredLines.append([[u1 + depthOffsetX, v1 + depthOffsetY, u2 + depthOffsetX, v2 + depthOffsetY], [SLOPE]])
-        # l = (x2-x1)**2 + (y2-y1)**2
-        # if l > longest:
-        #     longestI = i
-        #     longest = l
-
-    # # find the pair of longest lines, within reject criteria (not with an absurdly high hight difference)
-    # if longestI != -1:
-    #     print(newcenterheight := np.mean([(mirroredLines[i][0][1]+filteredLines[i][0][1])/2, (mirroredLines[i][0][3]+filteredLines[i][0][3])/2]))
-
-    return filteredLines, mirroredLines, lines
+    return filteredLines
 
 def getContours(imgIn: np.ndarray):
     edges = cv2.Canny(cv2.medianBlur(cv2.copyMakeBorder(imgIn[30:], 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0), 3), 30, 200)
@@ -170,14 +115,22 @@ def estimateWallDistance(x, y):
 
     """
 
-    wallheight = (y-centerheight) * 2
-    if (wallheight <= 2): return np.Inf
+    screen_width = 640
+    screen_height = 480
+    horizontal_fov_degrees = 71.5
+    vertical_fov_degrees = 56.7
+    camera_position = np.array([0.0, 0.0, 0.0])
+    target = np.array([0, 0, -1])
+    up = np.array([0, 1, 0])
 
-    # print(1000 / (1/wallheight)) # calibration
 
-    distancefactor = 42000.0
-    d = (1 / wallheight) * distancefactor
+    ray_direction = cast_ray_from_screen_pixel(x, y, screen_width, screen_height, horizontal_fov_degrees, vertical_fov_degrees, camera_position, target, up)
 
-    # print(d)
+    [dx, dy, dz] = ray_direction
 
-    return d
+    dist_faktor = 89 / dy
+
+    dist = np.sqrt((dist_faktor * dz) ** 2 + (dist_faktor * dx) ** 2)
+
+    print(f"abstand: {dist}")
+    return dist

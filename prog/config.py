@@ -8,7 +8,7 @@ greenMax = (80, 255, 255)
 houghparams = {
   'threshold': 70,
   'minLineLength': 20,
-  'maxLineGap': 30
+  'maxLineGap': 80
 }
 
 centerstripheight = 80

@@ -75,7 +75,7 @@ async def image_stream(websocket, path):
             contoursG = getContours(blurredG)
             contoursR = getContours(blurredR)
 
-            newLines, mirroredLines, lines = findWallLines(edgesImg)
+            newLines = findWallLines(edgesImg)
 
             
             viz = (np.dstack((np.zeros(blurredG.shape),blurredG, blurredR)) * 255.999) .astype(np.uint8)
@@ -93,12 +93,12 @@ async def image_stream(websocket, path):
             
             # centerline
             # limg = cv2.line(limg, (0, centerheight + depthOffsetY), (640, centerheight + depthOffsetY), (0, 0, 255), 2)
-            for i, line in enumerate(lines):
-                [x1, y1, x2, y2] = line[0]
-                limg = cv2.line(limg, (x1, y1), (x2, y2), colors[0%4], 4)
-            # for i, line in enumerate(newLines):
-            #     [x1, y1, x2, y2], [slope] = line
-            #     limg = cv2.line(limg, (x1, y1), (x2, y2), colors[1%4], 4)
+            # for i, line in enumerate(lines):
+            #     [x1, y1, x2, y2] = line[0]
+            #     limg = cv2.line(limg, (x1, y1), (x2, y2), colors[0%4], 4)
+            for i, line in enumerate(newLines):
+                [x1, y1, x2, y2], [slope] = line
+                limg = cv2.line(limg, (x1, y1), (x2, y2), colors[1%4], 4)
             # for i, line in enumerate(mirroredLines):
             #     [x1, y1, x2, y2], [slope] = line
             #     limg = cv2.line(limg, (x1, y1), (x2, y2), colors[3%4], 4)

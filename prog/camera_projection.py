@@ -60,7 +60,8 @@ def cast_ray_from_screen_pixel(screen_x, screen_y, screen_width, screen_height, 
     world_space = np.linalg.inv(view_matrix_) @ view_space
     
     # Calculate ray direction
-    ray_direction = world_space[:3] / np.linalg.norm(world_space[:3])
+    # ray_direction = world_space[:3] / np.linalg.norm(world_space[:3])
+    ray_direction = world_space[:3]
     
     return ray_direction
 
