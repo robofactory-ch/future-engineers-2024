@@ -32,7 +32,7 @@ direction = 1
 
 async def image_stream(websocket, path):
 
-    global redMax, redMin, greenMax, greenMin, centerheight
+    global redMax, redMin, greenMax, greenMin
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
@@ -58,7 +58,6 @@ async def image_stream(websocket, path):
             
             color_frame = frames.get_color_frame()
             depth_frame = frames.get_depth_frame()
-
 
             if color_frame is None or depth_frame is None:
                 continue
@@ -88,20 +87,13 @@ async def image_stream(websocket, path):
             # Line visualizer
             colors = [(0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0)]
             limg = np.zeros(color_image.shape)
-            # limg = cv2.applyColorMap(depth_data, cv2.COLORMAP_JET)
-            limg = cv2.cvtColor(edgesImg, cv2.COLOR_GRAY2BGR)
+            limg = cv2.applyColorMap(depth_data, cv2.COLORMAP_JET)
             
             # centerline
-            # limg = cv2.line(limg, (0, centerheight + depthOffsetY), (640, centerheight + depthOffsetY), (0, 0, 255), 2)
-            # for i, line in enumerate(lines):
-            #     [x1, y1, x2, y2] = line[0]
-            #     limg = cv2.line(limg, (x1, y1), (x2, y2), colors[0%4], 4)
+            limg = cv2.line(limg, (0, centerheight + depthOffsetY), (640, centerheight + depthOffsetY), (0, 0, 255), 2)
             for i, line in enumerate(newLines):
-                [x1, y1, x2, y2], [slope] = line
+                x1, y1, x2, y2 = line
                 limg = cv2.line(limg, (x1, y1), (x2, y2), colors[1%4], 4)
-            # for i, line in enumerate(mirroredLines):
-            #     [x1, y1, x2, y2], [slope] = line
-            #     limg = cv2.line(limg, (x1, y1), (x2, y2), colors[3%4], 4)
             # end viz
             
             # find relative coordinates
@@ -115,7 +107,7 @@ async def image_stream(websocket, path):
             #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
 
             for line in newLines:
-                [x1, y1, x2, y2], [slope] = line
+                x1, y1, x2, y2 = line
                 d1 = estimateWallDistance(x1, y1)
                 d2 = estimateWallDistance(x2, y2)
 
@@ -175,8 +167,8 @@ async def image_stream(websocket, path):
 
             
 
-            # a_b64 = encode_image(viz)
-            a_b64 = encode_image(edgesImg)
+            a_b64 = encode_image(viz)
+            # a_b64 = encode_image(greyImg)
             b_b64 = encode_image(limg)
             # b_b64 = encode_depth(depth_data)
 

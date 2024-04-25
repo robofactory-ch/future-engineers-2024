@@ -3,8 +3,6 @@ import numpy as np
 import math
 from config import *
 
-from camera_projection import cast_ray_from_screen_pixel
-
 def filter(color_image):
 
   hsv = cv2.cvtColor(color_image, cv2.COLOR_BGR2HSV)
@@ -25,7 +23,6 @@ def filter(color_image):
   blurredR = cv2.medianBlur(rMask, 5)
   blurredG = cv2.medianBlur(gMask, 5)
   grayImage = cv2.cvtColor(color_image, cv2.COLOR_RGB2GRAY)
-
   blurredImg = cv2.GaussianBlur(grayImage, (3, 3), 0)
   # edge detection
   lower = 30
@@ -37,16 +34,6 @@ def filter(color_image):
 
 
 def findWallLines(edgesImg):
-    """Finds the lines, that correspond to the walls of the game field.
-    Adjusts the current centerheight to match with the suspension state of the car
-
-    Args:
-        edgesImg (_type_): Cannied image showing the edges
-
-    Returns:
-        list[int, int, int, int]: Walls found in x1, y2...
-    """
-
     lines = cv2.HoughLinesP(edgesImg, 1, np.pi/360,
                             threshold = houghparams['threshold'],
                             minLineLength = houghparams['minLineLength'],
@@ -60,11 +47,8 @@ def findWallLines(edgesImg):
     lines.sort(key=lineSort)
 
     filteredLines = []
-    slopedLines = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
-        slope = np.arctan2(y2-y1, x2-x1)
-        slopedLines += [[[x1, y1, x2, y2], [slope]]]
         if y1 == 0 or y2 == 0:
             continue
             pass
@@ -74,11 +58,10 @@ def findWallLines(edgesImg):
         if y1 < centerheight or y2 < centerheight:
             continue
             pass
-        if abs(np.arctan2(y2-y1, x2-x1)) > math.pi/3:
+        if abs(math.atan2(y2-y1, x2-x1)) > math.pi/3:
             continue
             pass
-        filteredLines.append([[x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY], [slope]])
-
+        filteredLines.append([x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY])
     return filteredLines
 
 def getContours(imgIn: np.ndarray):
@@ -115,22 +98,14 @@ def estimateWallDistance(x, y):
 
     """
 
-    screen_width = 640
-    screen_height = 480
-    horizontal_fov_degrees = 71.5
-    vertical_fov_degrees = 56.7
-    camera_position = np.array([0.0, 0.0, 0.0])
-    target = np.array([0, 0, -1])
-    up = np.array([0, 1, 0])
+    wallheight = (y-centerheight) * 2
+    if (wallheight <= 2): return np.Inf
 
+    # print(1000 / (1/wallheight)) # calibration
 
-    ray_direction = cast_ray_from_screen_pixel(x, y, screen_width, screen_height, horizontal_fov_degrees, vertical_fov_degrees, camera_position, target, up)
+    distancefactor = 42000.0
+    d = (1 / wallheight) * distancefactor
 
-    [dx, dy, dz] = ray_direction
+    # print(d)
 
-    dist_faktor = 89 / dy
-
-    dist = np.sqrt((dist_faktor * dz) ** 2 + (dist_faktor * dx) ** 2)
-
-    print(f"abstand: {dist}")
-    return dist
+    return d
