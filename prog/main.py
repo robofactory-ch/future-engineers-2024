@@ -9,7 +9,7 @@ import base64
 import json
 from gpiozero import Servo
 from config import *
-from datetime import datetime
+import time
 
 ESC_KEY = 27
 PRINT_INTERVAL = 1  # seconds
@@ -34,9 +34,16 @@ direction = 0
 async def image_stream(websocket, path):
 
     global redMax, redMin, greenMax, greenMin, direction
+
+    running = True
+
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
+
+    startTime = time.time_ns() // 1000000
+    quadrant = 0
+    last_quadrant_at = time.time_ns() // 1000000 + 500
 
     motor.value = -0.065
 
@@ -51,8 +58,10 @@ async def image_stream(websocket, path):
 
     pipeline.start(config)
 
+    last_center_wall_at = time.time_ns() // 1000000
+
     try:
-        while True:
+        while running:
             frames: FrameSet = pipeline.wait_for_frames(100)
             if frames is None:
                 continue
@@ -108,6 +117,7 @@ async def image_stream(websocket, path):
             #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
             seen_left_wall = False
             seen_right_wall = False
+            seen_center_wall = False
 
             for line in newLines:
                 x1, y1, x2, y2 = line
@@ -117,24 +127,26 @@ async def image_stream(websocket, path):
                 wall_dist = (d1 + d2) / 2
 
                 if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
-                    print("found center wall", np.arctan2(y2-y1, x2-x1))
-
                     classifiedobjects += [[CENTER, wall_dist]]
+
+
+                    last_center_wall_at = time.time_ns() // 1000000
+                    seen_center_wall = True
                 
                 elif (x1 + x2) / 2 - 320 > 0:
-                    print("right wall")
+                    # print("right wall")
                     seen_right_wall = True
                     classifiedobjects += [[RIGHT, wall_dist]]
                 else:
-                    print("left wall")
+                    # print("left wall")
                     seen_left_wall = True
                     classifiedobjects += [[LEFT, wall_dist]]
             
             if direction == 0:
-                if seen_left_wall:
+                if seen_left_wall and not seen_right_wall:
                     direction = 1
                     print("[ROUNDDIRECTION SET CW]")
-                if seen_right_wall:
+                if seen_right_wall and not seen_left_wall:
                     direction = -1
                     print("[ROUNDDIRECTION SET CC]")
 
@@ -146,18 +158,22 @@ async def image_stream(websocket, path):
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
+                    if quadrant >= stopQuadrantsCount and object[1] < 1500:
+                        running = False
+                        print("RUN FINISHED")
                     if object[1] < 1100:
                         steeringInputs += [weigths[wi][0]*coeff]
 
-                        print(f"CENTER WALL with {coeff}")
+                        # print(f"CENTER WALL with {coeff}")
+
                 if object[0] == RIGHT:
                     if object[1] < 900:
                         steeringInputs += [weigths[wi][1]*coeff]
-                        print(f"RIGHT WALL with {coeff}")
+                        # print(f"RIGHT WALL with {coeff}")
                 if object[0] == LEFT:
                     if object[1] < 1200:
                         steeringInputs += [weigths[wi][2]*coeff]
-                        print(f"LEFT WALL with {coeff}")
+                        # print(f"LEFT WALL with {coeff}")
                 
                 if object[0] == BLOBRED:
                     if object[2] > 200:
@@ -168,7 +184,7 @@ async def image_stream(websocket, path):
                         pass
                         # steeringInputs += [-15]
 
-            print(steer := np.sum(np.array(steeringInputs)) / 16.0)
+            steer = np.sum(np.array(steeringInputs)) / 16.0
 
             steering.value = get_pos_percentage(steer)
 
@@ -179,7 +195,15 @@ async def image_stream(websocket, path):
             
             # end relative coords
 
+            
+            if (time.time_ns() // 1000000 - last_center_wall_at) > new_center_timeout:
+                print(f"{(time.time_ns() // 1000000 - last_center_wall_at)}ms not taking because timeout is at {(time.time_ns() // 1000000 - last_quadrant_at)}")
 
+                if (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout:
+                    print(f"Quadrant turend {(time.time_ns() // 1000000 - last_quadrant_at)}ms")
+                    last_quadrant_at = time.time_ns() // 1000000
+                    quadrant += 1
+                    print(f"------------------------- {quadrant} / {stopQuadrantsCount} ------------------------------------")
 
             
 
@@ -188,9 +212,9 @@ async def image_stream(websocket, path):
             b_b64 = encode_image(limg)
             # b_b64 = encode_depth(depth_data)
 
-            print("Sending frames to client...")
+            # print("Sending frames to client...")
             data = {
-                "a": a_b64,
+                # "a": a_b64,
                 "b": b_b64
             }            
             await websocket.send(json.dumps(data))

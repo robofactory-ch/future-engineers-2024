@@ -1,5 +1,8 @@
 from numpy import pi
 
+stopQuadrantsCount = 12
+
+
 redMin = (0, 90, 80)
 redMax = (5, 255, 255)
 greenMin = (50, 20, 20)
@@ -35,3 +38,6 @@ weigths = [[-1, -1, 0.75],
 steeringMaxLeft = -0.88 # needs to be smaller
 sterringMaxRight = 0.65
 steeringRange = abs(steeringMaxLeft-sterringMaxRight)
+
+new_center_timeout = 220
+new_quadrant_timeout = 650
