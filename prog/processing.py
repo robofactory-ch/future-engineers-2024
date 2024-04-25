@@ -34,6 +34,15 @@ def filter(color_image):
 
 
 def findWallLines(edgesImg):
+    """Finds the lines, that correspond to the walls of the game field. Also adjusts the current centerheight to match with the suspension state of the car
+
+    Args:
+        edgesImg (_type_): Cannied image showing the edges
+
+    Returns:
+        list[int, int, int, int]: Walls found in x1, y2...
+    """
+
     lines = cv2.HoughLinesP(edgesImg, 1, np.pi/360,
                             threshold = houghparams['threshold'],
                             minLineLength = houghparams['minLineLength'],
@@ -47,8 +56,11 @@ def findWallLines(edgesImg):
     lines.sort(key=lineSort)
 
     filteredLines = []
+    slopedLines = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
+        slope = np.arctan2(y2-y1, x2-x1)
+        slopedLines += [[[x1, y1, x2, y2], [slope]]]
         if y1 == 0 or y2 == 0:
             continue
             pass
@@ -58,11 +70,44 @@ def findWallLines(edgesImg):
         if y1 < centerheight or y2 < centerheight:
             continue
             pass
-        if abs(math.atan2(y2-y1, x2-x1)) > math.pi/3:
+        if abs(np.arctan2(y2-y1, x2-x1)) > math.pi/3:
             continue
             pass
-        filteredLines.append([x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY])
-    return filteredLines
+        filteredLines.append([[x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY], [slope]])
+    
+    # centerhights = []
+    mirroredLines = []
+    # find corrected centerheight, this changes depending on how "squatted" the car is in the rear suspension. alternative: Replace shocks with solid parts
+    for [[x1, y1, x2, y2], [slope]] in filteredLines:
+        slope = -slope  # we're searching for the same but negative slope (because of parallax)
+        smallestDiff = float('inf')
+        smallestI = -1
+        for i, [[X1, Y1, X2, Y2], [SLOPE]] in enumerate(slopedLines):
+            diff = abs(slope - SLOPE)
+            if diff < smallestDiff:
+                smallestI = i
+                smallestDiff = diff
+        # Get the line with the most similar slope
+        [X1, Y1, X2, Y2], [SLOPE] = slopedLines[smallestI]
+
+        # Find the endpoints with the same x-coordinate as the original line's endpoints
+        if abs(X1 - x2) < abs(X2 - x2):
+            u1 = X1
+            v1 = Y1 + ((Y2 - Y1) / (X2 - X1)) * (x1 - X1)
+            u2 = X1
+            v2 = Y1 + ((Y2 - Y1) / (X2 - X1)) * (x2 - X1)
+        else:
+            u1 = X2
+            v1 = Y2 + ((Y1 - Y2) / (X1 - X2)) * (x1 - X2)
+            u2 = X2
+            v2 = Y2 + ((Y1 - Y2) / (X1 - X2)) * (x2 - X2)
+
+        # Now you have the coordinates u1, v1, u2, v2
+        mirroredLines.append([[u1 + depthOffsetX, v1 + depthOffsetY, u2 + depthOffsetX, v2 + depthOffsetY], [SLOPE]]) 
+
+
+
+    return filteredLines, mirroredLines
 
 def getContours(imgIn: np.ndarray):
     edges = cv2.Canny(cv2.medianBlur(cv2.copyMakeBorder(imgIn[30:], 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0), 3), 30, 200)

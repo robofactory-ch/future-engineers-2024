@@ -74,7 +74,7 @@ async def image_stream(websocket, path):
             contoursG = getContours(blurredG)
             contoursR = getContours(blurredR)
 
-            newLines = findWallLines(edgesImg)
+            newLines, mirroredLines = findWallLines(edgesImg)
 
             
             viz = (np.dstack((np.zeros(blurredG.shape),blurredG, blurredR)) * 255.999) .astype(np.uint8)
@@ -92,8 +92,11 @@ async def image_stream(websocket, path):
             # centerline
             limg = cv2.line(limg, (0, centerheight + depthOffsetY), (640, centerheight + depthOffsetY), (0, 0, 255), 2)
             for i, line in enumerate(newLines):
-                x1, y1, x2, y2 = line
+                [x1, y1, x2, y2], [slope] = line
                 limg = cv2.line(limg, (x1, y1), (x2, y2), colors[1%4], 4)
+            for i, line in enumerate(mirroredLines):
+                [x1, y1, x2, y2], [slope] = line
+                limg = cv2.line(limg, (x1, y1), (x2, y2), colors[2%4], 4)
             # end viz
             
             # find relative coordinates
@@ -107,7 +110,7 @@ async def image_stream(websocket, path):
             #     classifiedobjects += [[BLOBRED, c[1], c[0]]]
 
             for line in newLines:
-                x1, y1, x2, y2 = line
+                [x1, y1, x2, y2], [slope] = line
                 d1 = estimateWallDistance(x1, y1)
                 d2 = estimateWallDistance(x2, y2)
 
