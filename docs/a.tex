@@ -1,0 +1,149 @@
+% !TeX program = xelatex
+\documentclass[a4paper]{scrarticle}
+
+\usepackage[ngerman]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+
+\usepackage[left=2.25cm, right=2.25cm, top=3.00cm, bottom=3.50cm]{geometry}
+\usepackage[headsepline, footsepline]{scrlayer-scrpage}
+\renewcommand*{\headfont}{\normalfont}
+\usepackage{csquotes}
+
+\usepackage{graphicx}
+\usepackage[figurename=Abb.]{caption}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\usepackage{tabto}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{blindtext, showframe}
+\usepackage{fontspec}
+\usepackage{lipsum} % for dummy text
+
+\definecolor{AKSAcolor}{rgb}{0.64,0.44,0.32}
+\newfontfamily\AKAfont{AKA}
+
+% Redefine sectioning commands to set font
+\makeatletter
+\renewcommand\section{\@startsection {section}{1}{\z@}%
+                                   {-3.5ex \@plus -1ex \@minus -.2ex}%
+                                   {2.3ex \@plus.2ex}%
+                                   {\Huge\AKAfont}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}%
+                                     {-3.25ex\@plus -1ex \@minus -.2ex}%
+                                     {1.5ex \@plus .2ex}%
+                                     {\Large\AKAfont}}
+\renewcommand{\maketitle}{%
+																		 \begin{titlepage}
+																			 \null\vfill % Add space at the top
+																			 \begin{center}
+																				 {\huge\@title\par}%
+																				 \vspace{0.5cm} % Adjust spacing between title and author
+																				 {\large\@subtitle\par} % Add the subtitle
+																				 \vspace{1.5cm} % Adjust spacing between author and subtitle
+																				 {\Large\@author\par}
+																				 \vspace{0.5cm} % Adjust spacing between subtitle and date
+																				 {\large\@date\par} % Add the date
+																			 \end{center}
+																			 \vfill % Fill remaining space at the bottom
+																			 \begin{center}
+																				Eingereicht bei der WRO Regio in Waldkirch bei Freiburg
+																			 \end{center}
+																			 \@thanks % If you have any thanks or notes, they will be printed here
+																		 \end{titlepage}%
+																	 }
+
+\makeatother
+
+\usepackage{hyperref}
+\hypersetup{colorlinks=false, pdfborder={0 0 0}, pdftitle=}
+
+
+
+\begin{document}
+
+\title{\AKAfont\Huge\textcolor{AKSAcolor}{Dokumentation}}
+\subtitle{Future Engineers 2024}
+\author{robofactory (Jesse Born, Julian von Hoff)}
+\date{April 2024}
+
+\pagenumbering{gobble} % Suppress page numbering
+\ihead{Future Engineers Dokumentation}
+\ifoot{\\robofactory, 2024}
+
+\maketitle
+\clearpage
+\newpage
+
+
+\pagenumbering{arabic}
+
+\section{Motorisierung}
+
+Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modelbau stammt.
+Wir verwenden einen 21.5T gewickelten Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
+
+
+\section{Energie \& Sensoren}
+
+Der einzige Sensor den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine Astra Embedded S.
+Dieses relativ preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels Struckturiertem Infrarotlicht.
+Via USB / UVC-Protokoll wird das Kamerabild an unseren Hauptrechner, einen Raspberry Pi 4B übertragen.
+
+\section{Hindernisse}
+
+Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernissrennen die farbigen Klötze zu erkennen. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erkannt und lokalisiert.
+
+\subsection{Banden}
+
+Als erstes erstellen wir ein Bild, in dem nur alle (fast) schwarzen Pixel abgebildet sind. Darin suchen wir anschliessend nach kontrastreichen Kanten.
+Haben wir die Kanten gefunden, segmentieren wir mittels probabilistischer Hough-Transformation zusamenhängende Kanten aus.
+Nun filtern wir diese Kanten weiter, Wir überspringen alle Linien, welche...
+\begin{enumerate}
+	\item {keinen Endpunkt in einem Streifen um die Bildmitte haben}
+	\item {eine Nulllänge haben}
+	\item {komplett über der Bildmitte liegen}
+	\item {vertikal im Bild stehen}
+\end{enumerate}
+So erhalten wir pro Wand eine Linie, an der unteren Kante dieser, an der Stelle wo sie auf die Spielfeldmatte trifft.
+Mittels des 2. Strahlensatzes können wir nun den Abstand schätzen.
+$$
+d = \frac{1}{(y_{Endpunkt}-y_{Bildmitte})} * s_d
+$$
+($d$: Abstand, $y_{Endpunkt}$: y-Koordinate eines Linienendpunktes im Bild, $y_{Bildmitte}$: Parallaxenmitte des Kamerbildes und $s_d$: konstanter Faktor, der sich zwar aus den intrinsischen Kameraparametern ableitet, jedoch experimentel bestummen wurde. )
+\clearpage
+Wände werden nun in drei Klassen unterteilt:
+\begin{itemize}
+	\item Rechts: Eine Wand am rechten Bildrand
+	\item Links: Eine Wand am linken Bildrand
+	\item Mitte: Eine Wand, deren Steigungswinkel unter $0.05$ (rad) liegt.
+\end{itemize}
+Diese Klassifizierung wird auch zu Beginn des Laufs zur feststellung der Rundenrichtung verwendet – ist eine linke Wand sichtbar, wird im Uhrzeigersinn gefahren.
+
+\subsection{Hindernisse}
+
+Das originale RGB-Bild wird in den HSV-Farbraum umgerechnet, um rot und grün deutlich unterscheiden zu können. Diesen Trick kennen und nutzten wir bereits seit mehreren Jahren in der Kategorie RoboMission der WRO.
+Pixel die nun zwischen der Rot- bzw. Grüngrenzen liegen, werden als der Farbe entsprechend gespeichert. 
+Auf diesen Binärbildern werden nun die Konturen erkannt und die Mittelpunkte sowie die Breite und Höhe bestummen.
+
+Analog zu oben, jedoch nur mit der Höhe der erkannten Kontur, wird mittels Strahlensazt der Abstand zum Hinderniss geschätzt.
+
+\subsection{Steuersignal}
+
+\[ \frac{\sum_{}\frac{1}{d_i}}{T} \]
+
+
+\section{Fotos}
+\section{Engineering \& Design}
+Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse"). 
+Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, so dass die gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
+Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vorderen Stossstange. Die Kamera hält darin Reibungsbasiert und lässt sich für Wartungsarbeiten rund um diese leicht entfernen.
+Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3d-gedruckten Teilen ersetzt. Damit vermeiden wir, das unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
+
+\section{Anhänge}
+
+
+\end{document}
