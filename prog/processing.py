@@ -78,10 +78,14 @@ def getContours(imgIn: np.ndarray, depth_data: np.ndarray):
             if moment["m00"] != 0:
                 x = int(moment["m10"] / moment["m00"])
                 y = int(moment["m01"] / moment["m00"])
-                width = math.ceil(math.sqrt(size) * contourSizeConstant)
+                if abs(y-centerheight) > 45:
+                    continue
 
-                z = depth_data[x][y]
-                print("z coord", z)
+                _, _, w, h = cv2.boundingRect(contour)
+                width = math.ceil(w * contourSizeConstant)
+
+                z = estimatePillarDistance(h)
+                # print(f"pillar at d={z}")
 
                 processedContours.append([x, width, z])
     return processedContours
@@ -109,6 +113,31 @@ def estimateWallDistance(x, y):
 
     distancefactor = 36000.0
     d = (1 / wallheight) * distancefactor
+
+    # print(d)
+
+    return d
+
+def estimatePillarDistance(h):
+    """
+    Based on Intercept theorem, estimate distance of a pillar of hight h
+
+    d = (100 : h) * f
+
+
+
+    SC: Focal distance                              to be measured mm
+    SD: tbd distance                                =? mm
+    AC: Hight on sensor / in pixels*dotspermm       =(var)mm
+    BD: Wall hight                                  = 100 mm
+
+    """
+    if (h <= 2): return np.Inf
+
+    # print(1000 / (1/h)) # calibration
+
+    distancefactor = 47000.0
+    d = (1 / h) * distancefactor
 
     # print(d)
 
