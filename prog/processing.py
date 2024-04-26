@@ -64,11 +64,11 @@ def findWallLines(edgesImg):
         filteredLines.append([x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY])
     return filteredLines
 
-def getContours(imgIn: np.ndarray):
+def getContours(imgIn: np.ndarray, depth_data: np.ndarray):
     edges = cv2.Canny(cv2.medianBlur(cv2.copyMakeBorder(imgIn[30:], 2, 2, 2, 2, cv2.BORDER_CONSTANT, value=0), 3), 30, 200)
 
     contours, hierarchy = cv2.findContours(edges, 
-        cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     processedContours = []
     for contour in contours:
@@ -79,7 +79,11 @@ def getContours(imgIn: np.ndarray):
                 x = int(moment["m10"] / moment["m00"])
                 y = int(moment["m01"] / moment["m00"])
                 width = math.ceil(math.sqrt(size) * contourSizeConstant)
-                processedContours.append([x, width])
+
+                z = depth_data[x][y]
+                print("z coord", z)
+
+                processedContours.append([x, width, z])
     return processedContours
 
 

@@ -81,8 +81,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
 
 
-            contoursG = getContours(blurredG)
-            contoursR = getContours(blurredR)
+            contoursG = getContours(blurredG, depth_data)
+            contoursR = getContours(blurredR, depth_data)
 
             newLines = findWallLines(edgesImg)
 
@@ -118,6 +118,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
             for c in contoursR:
                 classifiedobjects += [[BLOBRED, c[1], c[0]]]
+            
             seen_left_wall = False
             seen_right_wall = False
             seen_center_wall = False
@@ -237,13 +238,13 @@ def process_depth_frame(depth_frame):
     depth_data = depth_data.reshape((height, width))
 
     depth_data = depth_data.astype(np.float32) * scale
-    # depth_data = np.where((depth_data > MIN_DEPTH) & (depth_data < MAX_DEPTH), depth_data, 0)
+    depth_data = np.where((depth_data > MIN_DEPTH) & (depth_data < MAX_DEPTH), depth_data, 0)
     depth_data = depth_data.astype(np.uint16)
 
-    depth_image = cv2.normalize(depth_data, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
-    depth_image = cv2.applyColorMap(depth_image, cv2.COLORMAP_JET)
+    # depth_image = cv2.normalize(depth_data, None, 0, 255, cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+    # depth_image = cv2.applyColorMap(depth_image, cv2.COLORMAP_JET)
 
-    return depth_image
+    return depth_data
 
 def encode_image(image):
     retval, buffer = cv2.imencode('.jpg', image)

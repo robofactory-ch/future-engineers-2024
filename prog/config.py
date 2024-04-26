@@ -3,10 +3,10 @@ from numpy import pi
 stopQuadrantsCount = 12
 
 
-redMin = (0, 90, 80)
-redMax = (5, 255, 255)
-greenMin = (50, 20, 20)
-greenMax = (80, 255, 255)
+redMin = (0, 90, 30)
+redMax = (6, 255, 255)
+greenMin = (40, 10, 10)
+greenMax = (90, 220, 150)
 
 houghparams = {
   'threshold': 70,
