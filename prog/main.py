@@ -45,7 +45,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     quadrant = 0
     last_quadrant_at = time.time_ns() // 1000000 + 500
 
-    motor.value = -0.065
+    motor.value = 0.06
 
     try:
         color_profile, depth_profile = get_profiles(pipeline)
@@ -62,6 +62,11 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     try:
         while running:
+
+
+            if time.time_ns() // 1000000 - startTime > 1000:
+                motor.value = speed
+
             frames: FrameSet = pipeline.wait_for_frames(100)
             if frames is None:
                 continue
@@ -115,9 +120,9 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             classifiedobjects = []
 
             for c in contoursG:
-                classifiedobjects += [[BLOBGREEN, c[1], c[0]]]
+                classifiedobjects += [[BLOBGREEN, c[1], c[0], c[2]]]
             for c in contoursR:
-                classifiedobjects += [[BLOBRED, c[1], c[0]]]
+                classifiedobjects += [[BLOBRED, c[1], c[0], c[2]]]
             
             seen_left_wall = False
             seen_right_wall = False
@@ -158,39 +163,38 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             steeringInputs = []
 
             for object in classifiedobjects:
-                coeff = 1/(object[1]/3800)
+                wall_scalar = 1/(object[1]/3800)
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
-                    if quadrant >= stopQuadrantsCount and object[1] < 1500:
+                    if quadrant >= stopQuadrantsCount and object[1] < 1600:
                         running = False
                         print("RUN FINISHED")
-                    if object[1] < 1100:
-                        steeringInputs += [weigths[wi][0]*coeff]
-
-                        # print(f"CENTER WALL with {coeff}")
+                    if object[1] < 1300:
+                        steeringInputs += [weigths[wi][0]*wall_scalar]
 
                 if object[0] == RIGHT:
-                    if object[1] < 900:
-                        steeringInputs += [weigths[wi][1]*coeff]
-                        # print(f"RIGHT WALL with {coeff}")
+                    if object[1] < 1200:
+                        steeringInputs += [weigths[wi][1]*wall_scalar]
                 if object[0] == LEFT:
                     if object[1] < 1200:
-                        steeringInputs += [weigths[wi][2]*coeff]
-                        # print(f"LEFT WALL with {coeff}")
+                        steeringInputs += [weigths[wi][2]*wall_scalar]
                 
-                if object[0] == BLOBRED:
-                    if object[2] > 50:
-                        # pass
-                        steeringInputs += [15]
-                if object[0] == BLOBGREEN:
-                    if object[2] < 590:
-                        # pass
-                        steeringInputs += [-15]
+                if object[0] == BLOBRED and pillars:
+                    if object[3] < 800:
+                        steeringInputs += [weigths[wi][3]]
+                if object[0] == BLOBGREEN and pillars:
+                    if object[3] < 800:
+                        steeringInputs += [-weigths[wi][3]]
 
             steer = np.sum(np.array(steeringInputs)) / 16.0
 
             steering.value = get_pos_percentage(steer)
+
+
+            ang = steer*np.pi
+
+            viz = draw_steering_overlay(viz, ang)
             
             if (time.time_ns() // 1000000 - last_center_wall_at) > new_center_timeout:
                 print(f"{(time.time_ns() // 1000000 - last_center_wall_at)}ms not taking because timeout is at {(time.time_ns() // 1000000 - last_quadrant_at)}")
@@ -245,6 +249,28 @@ def process_depth_frame(depth_frame):
     # depth_image = cv2.applyColorMap(depth_image, cv2.COLORMAP_JET)
 
     return depth_data
+
+def draw_steering_overlay(image, steering_angle):
+    # Define colors
+    white = (255, 255, 255)
+    green = (0, 255, 0)
+    red = (0, 0, 255)
+    
+    # Calculate angle position on the image
+    center = (image.shape[1] // 2, image.shape[0])
+    angle_radius = min(image.shape[0], image.shape[1]) // 4
+    angle_length = 50
+    angle_rad = steering_angle
+    end_point = (int(center[0] + angle_radius * np.sin(angle_rad)), int(center[1] - angle_radius * np.cos(angle_rad)))
+    end_point2 = (int(end_point[0] + angle_length * np.cos(angle_rad)), int(end_point[1] + angle_length * np.sin(angle_rad)))
+
+    # Draw steering angle overlay
+    cv2.circle(image, center, angle_radius, green, 2)
+    cv2.arrowedLine(image, center, end_point, red, 2)
+
+    return image
+
+
 
 def encode_image(image):
     retval, buffer = cv2.imencode('.jpg', image)
