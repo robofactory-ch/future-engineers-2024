@@ -11,6 +11,7 @@
 \usepackage{csquotes}
 
 \usepackage{graphicx}
+\graphicspath{ {./images/} }
 \usepackage[figurename=Abb.]{caption}
 
 \usepackage{amsmath}
@@ -19,9 +20,11 @@
 \usepackage{tabto}
 \usepackage{xcolor}
 \usepackage{enumitem}
-\usepackage{blindtext, showframe}
+% \usepackage{blindtext, showframe}
 \usepackage{fontspec}
 \usepackage{lipsum} % for dummy text
+
+\usepackage{pdfpages}
 
 \definecolor{AKSAcolor}{rgb}{0.64,0.44,0.32}
 \newfontfamily\AKAfont{AKA}
@@ -40,16 +43,18 @@
 																		 \begin{titlepage}
 																			 \null\vfill % Add space at the top
 																			 \begin{center}
-																				 {\huge\@title\par}%
-																				 \vspace{0.5cm} % Adjust spacing between title and author
-																				 {\large\@subtitle\par} % Add the subtitle
-																				 \vspace{1.5cm} % Adjust spacing between author and subtitle
-																				 {\Large\@author\par}
-																				 \vspace{0.5cm} % Adjust spacing between subtitle and date
-																				 {\large\@date\par} % Add the date
-																			 \end{center}
-																			 \vfill % Fill remaining space at the bottom
-																			 \begin{center}
+																				{\huge\@title\par}%
+																				\vspace{0.5cm} % Adjust spacing between title and author
+																				{\large\@subtitle\par} % Add the subtitle
+																				\vspace{1.5cm} % Adjust spacing between author and subtitle
+																				{\Large\@author\par}xcolor
+																				\vspace{2.5cm} % Adjust spacing between subtitle and date
+																				\begin{center}
+																					\includegraphics[width=15cm]{team}
+																				\end{center}
+																				\vfill
+																				\vspace{0.5cm} % Adjust spacing between subtitle and date
+																				{\large\@date\par} % Add the date
 																				Eingereicht bei der WRO Regio in Waldkirch bei Freiburg
 																			 \end{center}
 																			 \@thanks % If you have any thanks or notes, they will be printed here
@@ -84,13 +89,14 @@
 \section{Motorisierung}
 
 Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modelbau stammt.
-Wir verwenden einen 21.5T gewickelten Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
+Wir verwenden einen 21.5T gewickelten Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
+Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
 
 
 \section{Energie \& Sensoren}
 
 Der einzige Sensor den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine Astra Embedded S.
-Dieses relativ preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels Struckturiertem Infrarotlicht.
+Dieses relativ preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels struckturiertem Infrarotlicht.
 Via USB / UVC-Protokoll wird das Kamerabild an unseren Hauptrechner, einen Raspberry Pi 4B übertragen.
 
 \section{Hindernisse}
@@ -101,7 +107,7 @@ Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste 
 
 Als erstes erstellen wir ein Bild, in dem nur alle (fast) schwarzen Pixel abgebildet sind. Darin suchen wir anschliessend nach kontrastreichen Kanten.
 Haben wir die Kanten gefunden, segmentieren wir mittels probabilistischer Hough-Transformation zusamenhängende Kanten aus.
-Nun filtern wir diese Kanten weiter, Wir überspringen alle Linien, welche...
+Nun filtern wir diese Kanten weiter, wir überspringen alle Linien, welche...
 \begin{enumerate}
 	\item {keinen Endpunkt in einem Streifen um die Bildmitte haben}
 	\item {eine Nulllänge haben}
@@ -133,7 +139,14 @@ Analog zu oben, jedoch nur mit der Höhe der erkannten Kontur, wird mittels Stra
 
 \subsection{Steuersignal}
 
-\[ \frac{\sum_{}\frac{1}{d_i}}{T} \]
+Mit dem Abstand gweichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte richtung in einen Wert summiert.
+\[
+	s := \frac{\sum_{}\frac{1}{d_i}}{T}
+\]
+Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
+\[
+	\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
+\]
 
 
 \section{Fotos}
@@ -144,6 +157,6 @@ Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vo
 Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3d-gedruckten Teilen ersetzt. Damit vermeiden wir, das unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
 
 \section{Anhänge}
-
+\includepdf[landscape=true]{plans/raspberrypiholder.pdf}
 
 \end{document}
