@@ -13,6 +13,7 @@
 \usepackage{graphicx}
 \graphicspath{ {./images/} }
 \usepackage[figurename=Abb.]{caption}
+\usepackage{floatrow}
 
 \usepackage{amsmath}
 \usepackage{amssymb}
@@ -25,6 +26,7 @@
 \usepackage{lipsum} % for dummy text
 
 \usepackage{pdfpages}
+
 
 \definecolor{AKSAcolor}{rgb}{0.64,0.44,0.32}
 \newfontfamily\AKAfont{AKA}
@@ -89,7 +91,7 @@
 \section{Motorisierung}
 
 Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modelbau stammt.
-Wir verwenden einen 21.5T gewickelten Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
+Wir verwenden einen 21.5T gewickelten BLDC/brushless Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
 Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
 Unsere Räder bestehen aus Felgen die im Lieferumfang unseres Chassis dabei waren, so wie 56x28 mm Reifen von LEGO.
 
@@ -104,7 +106,7 @@ Die Stromversorgung erfolgt über einen sechszelligen NiMh-Akku. Um den Raspberr
 Mit den Pin 2 und 6 des GPIO-Headers des Pi, wird dieser schlussendlich mit Strom versorgt.
 Genau dieses technische Detail bereitete uns am meisten Kopfschmerzen, sowie ein totes Raspberry Pi. Wir konnten jedoch nicht genau feststellen, weshalb der Pi seinen "magischen Rauch" freigab.
 
-\section{Hindernisse}
+\section{Hindernisse \& Algorithmen}
 
 Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernissrennen die farbigen Hindernisse zu erkennen. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erkannt und auf einem virtuellen Spielfeld lokalisiert.
 
@@ -134,8 +136,10 @@ Wände werden nun in drei Klassen unterteilt:
 \end{itemize}
 Diese Klassifizierung wird auch zu Beginn des Laufs zur feststellung der Rundenrichtung verwendet – ist eine linke Wand sichtbar, wird im Uhrzeigersinn gefahren.
 
-\includegraphics[width=14cm]{findWallLines.png}
-
+\begin{figure}
+\includegraphics[width=16cm]{findWallLines.png}
+\caption{Auszug aus dem Code: Wanderkennung}
+\end{figure}
 \subsection{Startrichtung}
 
 Zu beginn des Laufs ist nur jeweils eine mittlere Wand, sowie eine rechte oder linke Wand sichtbar.
@@ -151,7 +155,7 @@ Analog zu oben, jedoch nur mit der Höhe der erkannten Kontur, wird mittels Stra
 
 \subsection{Steuersignal}
 
-Mit dem Abstand gweichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte richtung in einen Wert summiert.
+Mit dem Abstand gweichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
 \[
 	s := \frac{\sum_{}\frac{1}{d_i}}{T}
 \]

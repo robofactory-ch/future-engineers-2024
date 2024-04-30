@@ -42,25 +42,19 @@ def findWallLines(edgesImg):
         lines = list(lines)
     else:
         lines = []
-    def lineSort(line):
-        return line[0][0]
-    lines.sort(key=lineSort)
+    lines.sort(key=lambda x: x[0][0])
 
     filteredLines = []
     for line in lines:
         x1, y1, x2, y2 = line[0]
         if y1 == 0 or y2 == 0:
             continue
-            pass
         if (abs(y1 - centerheight) > centerstripheight and abs(y2 - centerheight) > centerstripheight):
             continue
-            pass
         if y1 < centerheight or y2 < centerheight:
             continue
-            pass
         if abs(math.atan2(y2-y1, x2-x1)) > math.pi/3:
             continue
-            pass
         filteredLines.append([x1 + depthOffsetX, y1 + depthOffsetY, x2 + depthOffsetX, y2 + depthOffsetY])
     return filteredLines
 
