@@ -125,7 +125,7 @@ $$
 d = \frac{1}{(y_{Endpunkt}-y_{Bildmitte})} * s_d
 $$
 ($d$: Abstand, $y_{Endpunkt}$: y-Koordinate eines Linienendpunktes im Bild, $y_{Bildmitte}$: Parallaxenmitte des Kamerbildes und $s_d$: konstanter Faktor, der sich zwar aus den intrinsischen Kameraparametern ableitet, jedoch experimentel bestummen wurde. )
-\clearpage
+
 Wände werden nun in drei Klassen unterteilt:
 \begin{itemize}
 	\item Rechts: Eine Wand am rechten Bildrand
@@ -134,7 +134,12 @@ Wände werden nun in drei Klassen unterteilt:
 \end{itemize}
 Diese Klassifizierung wird auch zu Beginn des Laufs zur feststellung der Rundenrichtung verwendet – ist eine linke Wand sichtbar, wird im Uhrzeigersinn gefahren.
 
-\subsection{Hindernisse}
+\subsection{Startrichtung}
+
+Zu beginn des Laufs ist nur jeweils eine mittlere Wand, sowie eine rechte oder linke Wand sichtbar.
+ist eine linke Wand sichtbar, ist die Umlaufrichtung für diese Runde im Uhrzeigersinn. Ist es eine rechte Wand, im Gegenuhrzeigersinn.
+
+\subsection{Farbene Hindernisse}
 
 Das originale RGB-Bild wird in den HSV-Farbraum umgerechnet, um rot und grün deutlich unterscheiden zu können. Diesen Trick kennen und nutzten wir bereits seit mehreren Jahren in der Kategorie RoboMission der WRO.
 Pixel die nun zwischen der Rot- bzw. Grüngrenzen liegen, werden als der Farbe entsprechend gespeichert. 
@@ -165,24 +170,23 @@ Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der 
 	\end{center}
 \clearpage
 
-
-
-
-
-
-
-
-
-
-
-
 \section{Engineering \& Design}
 Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse"). 
 Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, so dass die gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
 Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vorderen Stossstange. Die Kamera hält darin Reibungsbasiert und lässt sich für Wartungsarbeiten rund um diese leicht entfernen.
 Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3d-gedruckten Teilen ersetzt. Damit vermeiden wir, das unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
 
+Um unsere Recheneinheit auf dem Auto zu befestigen, haben wir ebenfalls eine Halterung designet und 3D-gedruckt. (Siehe Anhang)
+
 \section{Anhänge}
+
+\begin{itemize}
+	\item Konstruktionszeichnung Raspberry-Pi-Halterung
+	\item Konstruktionszeichnung Kamerahalterung
+	% \item Konstruktionszeichnung Federungsersatz
+\end{itemize}
+
 \includepdf[landscape=true]{plans/raspberrypiholder.pdf}
+\includepdf[landscape=true]{plans/cameraholder.pdf}
 
 \end{document}
