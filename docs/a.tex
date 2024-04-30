@@ -28,7 +28,7 @@
 \usepackage{pdfpages}
 
 
-\definecolor{AKSAcolor}{rgb}{0.64,0.44,0.32}
+\definecolor{AKSAcolor}{rgb}{0.9,0.0,0.0}
 \newfontfamily\AKAfont{AKA}
 
 % Redefine sectioning commands to set font
@@ -202,22 +202,25 @@ Der Code wird bewusst funktional gehalten, nur vereinzelt werden objektorientier
 \clearpage
 
 \section{Engineering \& Design}
-Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse"). 
+Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse").
 Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, so dass die gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
 Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vorderen Stossstange. Die Kamera hält darin Reibungsbasiert und lässt sich für Wartungsarbeiten rund um diese leicht entfernen.
 Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3d-gedruckten Teilen ersetzt. Damit vermeiden wir, das unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
-
 Um unsere Recheneinheit auf dem Auto zu befestigen, haben wir ebenfalls eine Halterung designet und 3D-gedruckt. (Siehe Anhang)
 
+Die Entscheidung zu einem bestehenden Bausatz, welcher gerade in die zur verfügung stehende Maximalgrösse passt, hat praktische Gründe. Durch das vermeiden von Problemen mit der Hardware des Roboters, sollten wir uns ganz auf die Programmierung sowie elektromechanischen Aspekte konzentrieren können.
 \section{Anhänge}
 
 \begin{itemize}
 	\item Konstruktionszeichnung Raspberry-Pi-Halterung
 	\item Konstruktionszeichnung Kamerahalterung
 	% \item Konstruktionszeichnung Federungsersatz
+	\item Schaltplan Stromversorgung
 \end{itemize}
 
 \includepdf[landscape=true]{plans/raspberrypiholder.pdf}
 \includepdf[landscape=true]{plans/cameraholder.pdf}
+
+\includegraphics[width=16cm]{circuit.png}
 
 \end{document}
