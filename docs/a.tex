@@ -47,7 +47,7 @@
 																				\vspace{0.5cm} % Adjust spacing between title and author
 																				{\large\@subtitle\par} % Add the subtitle
 																				\vspace{1.5cm} % Adjust spacing between author and subtitle
-																				{\Large\@author\par}xcolor
+																				{\Large\@author\par}
 																				\vspace{2.5cm} % Adjust spacing between subtitle and date
 																				\begin{center}
 																					\includegraphics[width=15cm]{team}
@@ -91,17 +91,22 @@
 Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modelbau stammt.
 Wir verwenden einen 21.5T gewickelten Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
 Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
-
+Unsere Räder bestehen aus Felgen die im Lieferumfang unseres Chassis dabei waren, so wie 56x28 mm Reifen von LEGO.
 
 \section{Energie \& Sensoren}
 
 Der einzige Sensor den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine Astra Embedded S.
-Dieses relativ preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels struckturiertem Infrarotlicht.
+Dieses verhältnissmäsig preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels struckturiertem Infrarotlicht.
 Via USB / UVC-Protokoll wird das Kamerabild an unseren Hauptrechner, einen Raspberry Pi 4B übertragen.
+
+
+Die Stromversorgung erfolgt über einen sechszelligen NiMh-Akku. Um den Raspberry Pi mit Strom zu versorgen, wird ein BEC (Battery Eliminator Circuit) aus dem Modellbau verwendet. 
+Mit den Pin 2 und 6 des GPIO-Headers des Pi, wird dieser schlussendlich mit Strom versorgt.
+Genau dieses technische Detail bereitete uns am meisten Kopfschmerzen, sowie ein totes Raspberry Pi. Wir konnten jedoch nicht genau feststellen, weshalb der Pi seinen "magischen Rauch" freigab.
 
 \section{Hindernisse}
 
-Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernissrennen die farbigen Klötze zu erkennen. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erkannt und lokalisiert.
+Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernissrennen die farbigen Hindernisse zu erkennen. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erkannt und auf einem virtuellen Spielfeld lokalisiert.
 
 \subsection{Banden}
 
@@ -148,8 +153,29 @@ Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der 
 	\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
 \]
 
-
+\clearpage
 \section{Fotos}
+\begin{center}
+	\includegraphics[width=14cm]{iso.png} \\		
+	\begin{tabular}{ c c }
+		\includegraphics[width=7cm]{front.jpeg} & \includegraphics[width=7cm]{left.jpeg} \\ 
+		\includegraphics[width=7cm]{rear.jpeg} & \includegraphics[width=7cm]{right.jpeg} \\  
+		\includegraphics[width=7cm]{top.jpeg} & \includegraphics[width=7cm]{bottom.jpeg}    
+	\end{tabular}
+	\end{center}
+\clearpage
+
+
+
+
+
+
+
+
+
+
+
+
 \section{Engineering \& Design}
 Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse"). 
 Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, so dass die gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
