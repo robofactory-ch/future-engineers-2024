@@ -90,40 +90,41 @@
 
 \section{Motorisierung}
 
-Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modelbau stammt.
-Wir verwenden einen 21.5T gewickelten BLDC/brushless Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
-Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
-Unsere Räder bestehen aus Felgen die im Lieferumfang unseres Chassis dabei waren, so wie 56x28 mm Reifen von LEGO.
+Als Hauptantrieb verwenden wir eine Handelsübliche Kombination aus Fahrtenregler und Motor, die aus dem Modellbau stammt.
+Wir nutzen wir einen 21.5 T gewickelten BLDC/brushless Motor von Tamiya mit eingebautem Drehgeber und das dazugehörige ESC TBLE-04SR. 
+Über ein Differenzialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
+Unsere Räder bestehen aus Felgen, die im Lieferumfang unseres Chassis dabei waren, so wie 56x28 mm Reifen von LEGO.
 
-Um mit dem Raspberry Pi das ESC und den Servo anzusteuern, werden 2 PWM-Ausgänge benötigt. Mittels eines eigenen HAT, der direkt auf den 40-Pin-Erweiterungsstecker des Pi gesteckt werden kann, brechen wir diese Stecker direkt passend aus.
+Zur Steuerung des Roboterautos ist ein "Amewi AMX Racing DC5821LV" Servo verbaut. Dieser wurde aufgrund der hohen Auflösung und Geschwindigkeit gewählt.
 
+Um mit dem Raspberry Pi das ESC und den Servo anzusteuern, werden 2 PWM-Ausgänge benötigt. Mit einem eigenen HAT, der direkt auf den 40-Pin-Erweiterungsstecker des Pi gesteckt werden kann, brechen wir diese Stecker passend aus.
 \section{Energie \& Sensoren}
 
-Der einzige Sensor den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine Astra Embedded S.
-Dieses verhältnissmäsig preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das erfassen von Tiefeninformation mittels struckturiertem Infrarotlicht.
+Der einzige Sensor, den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine "Astra Embedded S".
+Dieses verhältnismässig preiswerte Auslaufprodukt ermöglicht nebst der klassischen Webcamfunktion auch das Erfassen von Tiefeninformation mithilfe von strukturiertem Infrarotlicht.
 Via USB / UVC-Protokoll wird das Kamerabild an unseren Hauptrechner, einen Raspberry Pi 4B übertragen.
 
 
 Die Stromversorgung erfolgt über einen sechszelligen NiMh-Akku. Um den Raspberry Pi mit Strom zu versorgen, wird ein BEC (Battery Eliminator Circuit) aus dem Modellbau verwendet. 
-Mit den Pin 2 und 6 des GPIO-Headers des Pi, wird dieser schlussendlich mit Strom versorgt.
-Genau dieses technische Detail bereitete uns am meisten Kopfschmerzen, sowie ein totes Raspberry Pi. Wir konnten jedoch nicht genau feststellen, weshalb der Pi seinen "magischen Rauch" freigab.
+Mit den Pins 2 und 6 des GPIO-Headers des Pi wird dieser schlussendlich mit Strom versorgt.
+Genau dieses technische Detail bereitete uns am meisten Kopfschmerzen sowie ein totes Raspberry Pi. Wir konnten jedoch nicht genau feststellen, weshalb der Pi seinen "magischen Rauch" freigab. Unsere beste Hypothese ist eine fehlende "flyback" Diode.
 
 \section{Hindernisse \& Algorithmen}
 
-Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernissrennen die farbigen Hindernisse zu erkennen. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erkannt und auf einem virtuellen Spielfeld lokalisiert.
+Das von unserer Kamera erfasst RGB- bzw. BGR-Bild folgt nun 2 Pfaden: Der erste ist dafür zuständig, während dem Hindernisrennen die farbigen Hindernisse zu registrieren. Entlang dem zweiten Pfad werden mittels Graustufenbild und Hough-Lines-Algorithmus die Banden des Spielfeldes erfasst und auf einem virtuellen Spielfeld lokalisiert.
 
 \subsection{Banden}
 
 Als erstes erstellen wir ein Bild, in dem nur alle (fast) schwarzen Pixel abgebildet sind. Darin suchen wir anschliessend nach kontrastreichen Kanten.
-Haben wir die Kanten gefunden, segmentieren wir mittels probabilistischer Hough-Transformation zusamenhängende Kanten aus.
-Nun filtern wir diese Kanten weiter, wir überspringen alle Linien, welche...
+Haben wir die Kanten gefunden, segmentieren wir mittels probabilistischer Hough-Transformation zusammenhängende Kanten aus.
+Nun filtern wir diese Ecken weiter, wir überspringen dabei alle Linien, welche:
 \begin{enumerate}
-	\item {keinen Endpunkt in einem Streifen um die Bildmitte haben}
-	\item {eine Nulllänge haben}
+	\item {keinen Endpunkt in einem 80 Pixel hohen Streifen um die Bildmitte haben}
+	\item {eine Länge von Null haben}
 	\item {komplett über der Bildmitte liegen}
 	\item {vertikal im Bild stehen}
 \end{enumerate}
-So erhalten wir pro Wand eine Linie, an der unteren Kante dieser, an der Stelle wo sie auf die Spielfeldmatte trifft.
+So erhalten wir pro Wand eine Linie an der unteren Kante dieser an der Stelle, wo sie auf die Spielfeld-Matte trifft.
 Mittels des 2. Strahlensatzes können wir nun den Abstand schätzen.
 $$
 d = \frac{1}{(y_{Endpunkt}-y_{Bildmitte})} * s_d
@@ -141,37 +142,36 @@ Diese Klassifizierung wird auch zu Beginn des Laufs zur feststellung der Rundenr
 
 \subsection{Startrichtung}
 
-Zu beginn des Laufs ist nur jeweils eine mittlere Wand, sowie eine rechte oder linke Wand sichtbar.
-ist eine linke Wand sichtbar, ist die Umlaufrichtung für diese Runde im Uhrzeigersinn. Ist es eine rechte Wand, im Gegenuhrzeigersinn.
+Zu Beginn des Laufs ist nur jeweils eine mittlere Wand sowie eine rechte oder linke Wand sichtbar.
+Ist eine linke Wand sichtbar, ist die Umlaufrichtung für diese Runde im Uhrzeigersinn – ist es eine rechte Wand im Gegenuhrzeigersinn.
 
 \subsection{Farbene Hindernisse}
 
 Das originale RGB-Bild wird in den HSV-Farbraum umgerechnet, um rot und grün deutlich unterscheiden zu können. Diesen Trick kennen und nutzten wir bereits seit mehreren Jahren in der Kategorie RoboMission der WRO.
-Pixel die nun zwischen der Rot- bzw. Grüngrenzen liegen, werden als der Farbe entsprechend gespeichert. 
+Pixel, die jetzt zwischen der Rot- oder Grüngrenzen liegen, werden als der Farbe entsprechend gespeichert. 
 Auf diesen Binärbildern werden nun die Konturen erkannt und die Mittelpunkte sowie die Breite und Höhe bestummen.
 
-Analog zu oben, jedoch nur mit der Höhe der erkannten Kontur, wird mittels Strahlensazt der Abstand zum Hinderniss geschätzt.
+Analog zu oben, jedoch nur mit der Höhe des erkannten Umrisses, wird mittels Strahlensatz der Abstand zum Hindernis geschätzt.
 
 \subsection{Steuersignal}
 
-Mit dem Abstand gweichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
+Mit dem Abstand gewichtet wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
 \[
 	s := \frac{\sum_{}\frac{1}{d_i}}{T}
 	\]
-	Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
+	Dieser Wert wird dann auf das geschlossene intervall $[-1;1]$ normalisiert. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
 	\[
 		\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
 		\]
 		
 \subsection{Ende der Runde}
 
-Um am Ende der Runde im Startbereich stoppen zu können, zählen wir wie oft wir um einen Ecken abbiegen.
-Dies funktioniert, da während dem umfahren eines Ecken keine mittleren Wände erkannt werden. Wir während mehr als ca. 600ms keine mittlere Wand erkannt, zählen wir um eins hoch. Erreicht der Zähler $\geq 12$ und das Auto sieht eine mittlere Wand $\le 1600$mm vor sich, beendet es den Lauf automatisch.
-
+Um am Ende der Runde im Startbereich stoppen zu können, zählen wir, wie oft wir um eine Ecke biegen.
+Dies funktioniert, da während des Umfahrens einer Ecke keine mittleren Wände erkannt werden. Wir während mehr als ca. 600ms keine mittlere Wand erkannt, zählen wir um eins hoch. Erreicht der Zähler $\geq 12$ und das Auto sieht eine mittlere Wand $\le 1600$mm vor sich, beendet es den Lauf automatisch.
 \subsection{Programmierung}
 
-Bei der Programmierung setzen wir auf Python. Wir setzten ausserdem extensiv auf die Packete opencv-python sowie NumPy.
-Mittels dieser Packete erreichen wir einen hohen Grad an paralleler Bildverarbeitung, was uns eine Verarbeitungsrate von ca. 30 Hz ermöglicht (wenn die Kamerabilder nicht per WiFi gestreamt werden).
+Bei der Programmierung setzen wir auf Python. Wir setzten ausserdem extensiv auf die Pakete opencv-python sowie NumPy.
+Mittels dieser Pakete erreichen wir einen hohen Grad an paralleler Bildverarbeitung, was uns eine Verarbeitungsrate von ca. 30 Hz ermöglicht (wenn die Kamerabilder nicht per WiFi gestreamt werden).
 
 Der Code wird bewusst funktional gehalten, nur vereinzelt werden objektorientierte Muster genutzt.
 \begin{figure}[h]
@@ -202,13 +202,13 @@ Der Code wird bewusst funktional gehalten, nur vereinzelt werden objektorientier
 \clearpage
 
 \section{Engineering \& Design}
-Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse").
-Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, so dass die gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
-Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vorderen Stossstange. Die Kamera hält darin Reibungsbasiert und lässt sich für Wartungsarbeiten rund um diese leicht entfernen.
-Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3d-gedruckten Teilen ersetzt. Damit vermeiden wir, das unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
-Um unsere Recheneinheit auf dem Auto zu befestigen, haben wir ebenfalls eine Halterung designet und 3D-gedruckt. (Siehe Anhang)
+Der Bausatz des Chassis stammt ebenfalls aus dem Hause Tamiya – den Klassiker M-08 Concept haben wir modifiziert, dass der Einschlag der Lenkung grösser und die Federung so steif wie nur möglich ist. (Siehe Kapitel "3 - Hindernisse").
+Die vordere Stossstange, bestehend aus einem dichten Schaumstoff haben wir an der Bandsäge gekürzt, sodass die Gesamtlänge des Autos auch in die vorgegebenen 300 mm passt.
+Ergänzt haben wir den fahrbaren Unterbau mit einer Kamerahalterung über der vorderen Stossstange. Die Kamera hält darin reibungsbasiert und lässt sich für Wartungsarbeiten rund um diese leicht entfernen.
+Aus Notdurft – um unseren Wanderkennungsalgorithmus zu unterstützen – haben wir die hydraulische Federung des Chassisbausatzes mit soliden, 3-D-gedruckten Teilen ersetzt. Damit vermeiden wir, dass unser Auto rollt oder nickt – denn dies macht die visuelle Distanzschätzung ungenau bis unbrauchbar.
+Um unsere Recheneinheit auf dem Auto zu befestigen, haben wir eine Halterung 3-D-gedruckt. (Siehe Anhang)
 
-Die Entscheidung zu einem bestehenden Bausatz, welcher gerade in die zur verfügung stehende Maximalgrösse passt, hat praktische Gründe. Durch das vermeiden von Problemen mit der Hardware des Roboters, sollten wir uns ganz auf die Programmierung sowie elektromechanischen Aspekte konzentrieren können.
+Die Entscheidung zu einem bestehenden Bausatz, welcher gerade in die zur Verfügung stehende Maximalgrösse passt, hat praktische Gründe. Durch das Vermeiden von Problemen mit der Hardware des Roboters sollten wir uns ganz auf die Programmierung sowie elektromechanischen Aspekte konzentrieren können.
 \section{Anhänge}
 
 \begin{itemize}
