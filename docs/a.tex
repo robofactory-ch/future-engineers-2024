@@ -136,10 +136,7 @@ Wände werden nun in drei Klassen unterteilt:
 \end{itemize}
 Diese Klassifizierung wird auch zu Beginn des Laufs zur feststellung der Rundenrichtung verwendet – ist eine linke Wand sichtbar, wird im Uhrzeigersinn gefahren.
 
-\begin{figure}
-\includegraphics[width=16cm]{findWallLines.png}
-\caption{Auszug aus dem Code: Wanderkennung}
-\end{figure}
+
 \subsection{Startrichtung}
 
 Zu beginn des Laufs ist nur jeweils eine mittlere Wand, sowie eine rechte oder linke Wand sichtbar.
@@ -158,16 +155,36 @@ Analog zu oben, jedoch nur mit der Höhe der erkannten Kontur, wird mittels Stra
 Mit dem Abstand gweichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
 \[
 	s := \frac{\sum_{}\frac{1}{d_i}}{T}
-\]
-Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
-\[
-	\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
-\]
-
+	\]
+	Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
+	\[
+		\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
+		\]
+		
 \subsection{Ende der Runde}
 
 Um am Ende der Runde im Startbereich stoppen zu können, zählen wir wie oft wir um einen Ecken abbiegen.
 Dies funktioniert, da während dem umfahren eines Ecken keine mittleren Wände erkannt werden. Wir während mehr als ca. 600ms keine mittlere Wand erkannt, zählen wir um eins hoch. Erreicht der Zähler $\geq 12$ und das Auto sieht eine mittlere Wand $\le 1600$mm vor sich, beendet es den Lauf automatisch.
+
+\subsection{Programmierung}
+
+Bei der Programmierung setzen wir auf Python. Wir setzten ausserdem extensiv auf die Packete opencv-python sowie NumPy.
+Mittels dieser Packete erreichen wir einen hohen Grad an paralleler Bildverarbeitung, was uns eine Verarbeitungsrate von ca. 30 Hz ermöglicht (wenn die Kamerabilder nicht per WiFi gestreamt werden).
+
+Der Code wird bewusst funktional gehalten, nur vereinzelt werden objektorientierte Muster genutzt.
+\begin{figure}[h]
+\includegraphics[width=15cm]{findWallLines.png}
+\caption{Auszug aus dem Code: Wanderkennung}
+\end{figure}
+\begin{figure}[h]
+\includegraphics[width=15cm]{mainloop.png}
+\caption{Auszug aus dem Code: Hauptschleife}
+\end{figure}
+\begin{figure}[h]
+\includegraphics[width=15cm]{classification.png}
+\caption{Auszug aus dem Code: Wandklassifizierung}
+\end{figure}
+
 
 \clearpage
 \section{Fotos}
@@ -178,7 +195,7 @@ Dies funktioniert, da während dem umfahren eines Ecken keine mittleren Wände e
 		\includegraphics[width=7cm]{rear.jpeg} & \includegraphics[width=7cm]{right.jpeg} \\  
 		\includegraphics[width=7cm]{top.jpeg} & \includegraphics[width=7cm]{bottom.jpeg}    
 	\end{tabular}
-	\end{center}
+\end{center}
 \clearpage
 
 \section{Engineering \& Design}
