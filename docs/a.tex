@@ -158,6 +158,11 @@ Dieser Wert wird dann normalisiert auf das geschlossene intervall $[-1;1]$. Der 
 	\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
 \]
 
+\subsection{Ende der Runde}
+
+Um am Ende der Runde im Startbereich stoppen zu können, zählen wir wie oft wir um einen Ecken abbiegen.
+Dies funktioniert, da während dem umfahren eines Ecken keine mittleren Wände erkannt werden. Wir während mehr als ca. 600ms keine mittlere Wand erkannt, zählen wir um eins hoch. Erreicht der Zähler $\geq 12$ und das Auto sieht eine mittlere Wand $\le 1600$mm vor sich, beendet es den Lauf automatisch.
+
 \clearpage
 \section{Fotos}
 \begin{center}
