@@ -158,11 +158,11 @@ Analog zu oben, jedoch nur mit der Höhe des erkannten Umrisses, wird mittels St
 Mit dem Abstand gewichtet wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
 \[
 	s := \frac{\sum_{}\frac{1}{d_i}}{T}
-	\]
-	Dieser Wert wird dann auf das geschlossene intervall $[-1;1]$ normalisiert. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
-	\[
-		\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
-		\]
+\]
+Dieser Wert wird dann auf das geschlossene intervall $[-1;1]$ normalisiert. Der normalisierte Wert wird dann auf den Lenkanschlag des Servos abgebildet, so dass 0 auch einem gerade getrimmten Auto entspricht.
+\[
+	\alpha := [\frac{s}{16.0}]_{-1}^{ 1}	
+\]
 		
 \subsection{Ende der Runde}
 
