@@ -95,6 +95,8 @@ Wir verwenden einen 21.5T gewickelten BLDC/brushless Motor von Tamiya mit eingeb
 Über ein Differentialgetriebe und eine gesamthafte Untersetzung um den Faktor 3.122:1 bringt unser Fahrzeug seine Motorleistung über einen Heckantrieb auf den Boden.
 Unsere Räder bestehen aus Felgen die im Lieferumfang unseres Chassis dabei waren, so wie 56x28 mm Reifen von LEGO.
 
+Um mit dem Raspberry Pi das ESC und den Servo anzusteuern, werden 2 PWM-Ausgänge benötigt. Mittels eines eigenen HAT, der direkt auf den 40-Pin-Erweiterungsstecker des Pi gesteckt werden kann, brechen wir diese Stecker direkt passend aus.
+
 \section{Energie \& Sensoren}
 
 Der einzige Sensor den wir verbaut haben, ist eine RGB-D Kamera von Orbbec, eine Astra Embedded S.
@@ -190,6 +192,7 @@ Der Code wird bewusst funktional gehalten, nur vereinzelt werden objektorientier
 \section{Fotos}
 \begin{center}
 	\includegraphics[width=14cm]{iso.png} \\		
+	\includegraphics[width=14cm]{labeled.png} \\		
 	\begin{tabular}{ c c }
 		\includegraphics[width=7cm]{front.jpeg} & \includegraphics[width=7cm]{left.jpeg} \\ 
 		\includegraphics[width=7cm]{rear.jpeg} & \includegraphics[width=7cm]{right.jpeg} \\  
