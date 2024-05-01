@@ -33,8 +33,8 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
-weigths = [[-1.35, -1.15, 0.85, 11, -11],
-          [0.85, 1.15, 1.35, 11, -11],
+weigths = [[-1.35, -1.15, 1.5, 11, -11],
+          [-1.5, 1.15, 1.35, 11, -11],
          ]
 
 steeringMaxLeft = -0.88 # needs to be smaller

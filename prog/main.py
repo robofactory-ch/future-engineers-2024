@@ -30,7 +30,6 @@ steering = Servo("GPIO12", initial_value=get_pos_percentage(0))
 motor = Servo("GPIO13", initial_value=0.06)
 pushbutton = InputDevice("GPIO10")
 
-startbutton = False
 direction = 0
 
 async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
@@ -51,8 +50,9 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     steering.value = get_pos_percentage(0)
     time.sleep(0.5)
 
+    startbutton = False
     while not startbutton:
-        pin_state = pushbutton.is_active
+        startbutton =  pushbutton.is_active
         time.sleep(0.1)
 
     startTime = time.time_ns() // 1000000
@@ -184,7 +184,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     if quadrant >= stopQuadrantsCount and object[1] < 1600:
                         running = False
                         print("RUN FINISHED")
-                    if object[1] < 1300:
+                    if object[1] < 800:
                         steeringInputs += [weigths[wi][0]*wall_scalar]
 
                 if object[0] == RIGHT:
@@ -231,9 +231,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 "a": a_b64,
                 # "b": b_b64
             }
-            await websocket.send(json.dumps(data))
-
-            websocket.read_message()
+            # await websocket.send(json.dumps(data))
             
     except KeyboardInterrupt:
         pass
