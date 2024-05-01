@@ -7,7 +7,7 @@ from utils import frame_to_bgr_image
 from processing import filter, getContours, findWallLines, estimateWallDistance
 import base64
 import json
-from gpiozero import Servo
+from gpiozero import Servo, InputDevice
 from config import *
 import time
 
@@ -28,18 +28,32 @@ def get_pos_percentage(perc):
 
 steering = Servo("GPIO12", initial_value=get_pos_percentage(0))
 motor = Servo("GPIO13", initial_value=0.06)
+pushbutton = InputDevice("GPIO10")
 
+startbutton = False
 direction = 0
 
 async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     global redMax, redMin, greenMax, greenMin, direction
 
+
     running = True
 
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
+
+    steering.value = get_pos_percentage(1)
+    time.sleep(0.5)
+    steering.value = get_pos_percentage(-1)
+    time.sleep(0.5)
+    steering.value = get_pos_percentage(0)
+    time.sleep(0.5)
+
+    while not startbutton:
+        pin_state = pushbutton.is_active
+        time.sleep(0.1)
 
     startTime = time.time_ns() // 1000000
     quadrant = 0
@@ -218,6 +232,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 # "b": b_b64
             }
             await websocket.send(json.dumps(data))
+
+            websocket.read_message()
             
     except KeyboardInterrupt:
         pass
