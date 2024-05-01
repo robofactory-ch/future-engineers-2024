@@ -128,7 +128,7 @@ Mittels des 2. Strahlensatzes können wir nun den Abstand schätzen.
 $$
 d = \frac{1}{(y_{Endpunkt}-y_{Bildmitte})} * s_d
 $$
-($d$: Abstand, $y_{Endpunkt}$: y-Koordinate eines Linienendpunktes im Bild, $y_{Bildmitte}$: Parallaxenmitte des Kamerbildes und $s_d$: konstanter Faktor, der sich zwar aus den intrinsischen Kameraparametern ableitet, jedoch experimentel bestummen wurde. )
+($d$: Abstand, $y_{Endpunkt}$: y-Koordinate eines Linienendpunktes im Bild, $y_{Bildmitte}$: Parallaxenmitte des Kamerbildes und $s_d$: konstanter Faktor, der sich zwar aus den intrinsischen Kameraparametern ableitet, jedoch experimentell bestummen wurde. )
 
 Wände werden nun in drei Klassen unterteilt:
 \begin{itemize}
@@ -154,7 +154,7 @@ Analog zu oben, jedoch nur mit der Höhe des erkannten Umrisses, wird mittels St
 
 \subsection{Steuersignal}
 
-Mit dem Abstand gewichtet wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
+Mit dem Abstand gewichtet, wird nun für jedes erkannte Objekt, also Banden und Hindernisse, dessen bevorzugte Richtung in einen Wert summiert.
 \[
 	s := \frac{\sum_{}\frac{1}{d_i}}{T}
 \]
