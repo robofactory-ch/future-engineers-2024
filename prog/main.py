@@ -43,6 +43,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
 
+    print("Ready")
+
     steering.value = get_pos_percentage(1)
     time.sleep(0.5)
     steering.value = get_pos_percentage(-1)
@@ -50,7 +52,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     steering.value = get_pos_percentage(0)
     time.sleep(0.5)
 
-    startbutton = False
+    startbutton = True
     while not startbutton:
         startbutton =  pushbutton.is_active
         time.sleep(0.1)
@@ -144,10 +146,26 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             for line in newLines:
                 x1, y1, x2, y2 = line
-                d1 = np.cos(getCameraAzimuth(x1)) * estimateWallDistance(x1, y1)
-                d2 = np.cos(getCameraAzimuth(x2)) * estimateWallDistance(x2, y2)
+                d1 = estimateWallDistance(x1, y1)
+                d2 = estimateWallDistance(x2, y2)
 
-                wall_dist = (d1 + d2) / 2
+                u1 = (1 / np.sin(getCameraAzimuth(x1))) * d1
+                v1 = (1 / np.cos(getCameraAzimuth(x1))) * d1
+
+                # print(u1, v1)
+                u2 = (1 / np.sin(getCameraAzimuth(x2))) * d2
+                v2 = (1 / np.cos(getCameraAzimuth(x2))) * d2
+
+                A = (u2 - u1)
+                B = (v1 - v2)
+                C = (u1 * v2 - u2 * v1)
+
+                D = np.sqrt(A**2 + B**2)
+
+                wall_dist = -1.0
+                if D != 0.0:
+                    wall_dist = abs(C / D)
+                
 
                 if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
                     classifiedobjects += [[CENTER, wall_dist]]
@@ -155,15 +173,18 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
                     last_center_wall_at = time.time_ns() // 1000000
                     seen_center_wall = True
+                    print("center wall at", wall_dist)
                 
                 elif (x1 + x2) / 2 - 320 > 0:
                     # print("right wall")
                     seen_right_wall = True
                     classifiedobjects += [[RIGHT, wall_dist]]
+                    print("right wall at ", wall_dist)
                 else:
                     # print("left wall")
                     seen_left_wall = True
                     classifiedobjects += [[LEFT, wall_dist]]
+                    print("left wall at  ", wall_dist)
             
             if direction == 0:
                 if seen_left_wall and not seen_right_wall:
@@ -231,7 +252,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 "a": a_b64,
                 # "b": b_b64
             }
-            # await websocket.send(json.dumps(data))
+            await websocket.send(json.dumps(data))
             
     except KeyboardInterrupt:
         pass

@@ -113,10 +113,11 @@ def estimateWallDistance(x, y):
     return d
 
 
-cx_angles = np.arange(0.5, 640.5, 1, dtype="d")
-cx_angles = np.arctan2(cx_angles - 320, 105)
+cx_angles = np.arange(-319.5, 320.5, 1, dtype="d")
+cx_angles = np.arctan2(cx_angles, 450)
 def getCameraAzimuth(x):
-    return cx_angles[x]
+    # print("angle deg:", cx_angles[x]/np.pi*180)
+    return float(cx_angles[x])
 
 def estimatePillarDistance(h):
     """
