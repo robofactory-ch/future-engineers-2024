@@ -4,7 +4,7 @@ from pyorbbecsdk import Pipeline, FrameSet, Config, OBSensorType, OBAlignMode
 import cv2
 import numpy as np
 from utils import frame_to_bgr_image
-from processing import filter, getContours, findWallLines, estimateWallDistance
+from processing import filter, getCameraAzimuth, getContours, findWallLines, estimateWallDistance
 import base64
 import json
 from gpiozero import Servo, InputDevice
@@ -144,8 +144,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             for line in newLines:
                 x1, y1, x2, y2 = line
-                d1 = estimateWallDistance(x1, y1)
-                d2 = estimateWallDistance(x2, y2)
+                d1 = np.cos(getCameraAzimuth(x1)) * estimateWallDistance(x1, y1)
+                d2 = np.cos(getCameraAzimuth(x2)) * estimateWallDistance(x2, y2)
 
                 wall_dist = (d1 + d2) / 2
 

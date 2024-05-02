@@ -112,6 +112,12 @@ def estimateWallDistance(x, y):
 
     return d
 
+
+cx_angles = np.arange(0.5, 640.5, 1, dtype="d")
+cx_angles = np.arctan2(cx_angles - 320, 105)
+def getCameraAzimuth(x):
+    return cx_angles[x]
+
 def estimatePillarDistance(h):
     """
     Based on Intercept theorem, estimate distance of a pillar of hight h
