@@ -64,20 +64,20 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     steering.value = get_pos_percentage(0)
     time.sleep(0.5)
 
-    startbutton = False
+    startbutton = True
     while not startbutton:
         startbutton =  pushbutton.is_active
         time.sleep(0.1)
 
     startTime = time.time_ns() // 1000000
     quadrant = 0
-    last_quadrant_at = time.time_ns() // 1000000 + 500
+    last_quadrant_at = time.time_ns() // 1000000 - 250
 
     motor.value = 0.06
 
-    last_center_wall_at = time.time_ns() // 1000000
-
     integral_steering = 0.0
+
+    anti_pillaring = 0.0
 
     try:
         while running:
@@ -138,17 +138,18 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             
             # find relative coordinates
             # np.arange()
+            blobs = []
+            if pillars:
+                for c in contoursG:
+                    blobs += [[BLOBGREEN, c[0], c[1], c[2]]]
+                for c in contoursR:
+                    blobs += [[BLOBRED, c[0], c[1], c[2]]]
 
-            classifiedobjects = []
-
-            # for c in contoursG:
-            #     classifiedobjects += [[BLOBGREEN, c[1], c[0], c[2]]]
-            # for c in contoursR:
-            #     classifiedobjects += [[BLOBRED, c[1], c[0], c[2]]]
             
             mellowest_left = 90.0
             mellowest_right = 90.0
             seen_center_wall = False
+            classifiedobjects = []
 
             for line in newLines:
                 x1, y1, x2, y2 = line
@@ -201,7 +202,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     # print("left wall at  ", wall_dist)
             
             if direction == 0:
-                print(mellowest_left, mellowest_right)
+                # print(mellowest_left, mellowest_right)
                 if mellowest_left < mellowest_right and (mellowest_left + mellowest_right) < 179.0:
                     direction = 1
                     print("[ROUNDDIRECTION SET CW]")
@@ -213,59 +214,96 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 
             steeringInputs = [0.00]
 
+
+
+
+            pillarOverride = False
+            steeringInputsP = [0.00]
+            if pillars:
+                for obj in blobs:
+                    redgreen, x, y, width = obj
+                    print("pillar", y)
+                    if redgreen == BLOBRED:
+                        # red
+                        print(y)
+                        if y < 1200:
+                            steeringInputsP += [9 * float(x)/640.0]
+                            pillarOverride = True
+                    else:
+                        # green
+                        if y < 1200:
+                            
+                            pillarOverride = True
+                            steeringInputsP += [-9 * float(640-x)/640.0]
+            steeringInputs = [0.00]
             for object in classifiedobjects:
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
-                    if quadrant >= stopQuadrantsCount and object[1] < 2800 and (integral_steering <= 0.40):
+                    if quadrant >= stopQuadrantsCount and object[1] < 2300 and (integral_steering <= 0.30) and (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout / 3 and not pillars:
                         running = False
                         print("RUN FINISHED")
-                    # print("center", object[1])
+                    print("center", object[1])
 
-                    if object[1] < 1250:
-                        steeringInputs += [10]
-
-                if object[0] == RIGHT and direction == -1:
-                    err = (abs(80 / 180 * np.pi - wall_rotation)) % np.pi / np.pi
-                    steeringInputs += [weigths[wi][1] * err]
-                if object[0] == RIGHT and direction == 1 and object[1] < 200:
-                    steeringInputs += [weigths[wi][2]]
+                    if object[1] < 1175 and not pillars:
+                        steeringInputs += [10 * direction]
+                    if object[1] < 2000 and pillars:
+                        steeringInputs += [5 * direction]
                         
-                if object[0] == LEFT and direction == 1:
-                    err = (320 - object[1]) / 500
-                    ang_err = intermediate_angle_radians(-1.6, object[2]) / (np.pi/2)
 
-                    # print("PID LD", object[1], err)
-                    # print("PID L", object[2], ang_err)
+                        
+                pid_distance = 320 if not pillars else 370
+                pid_sp_angle_r = -1.6 if not pillars else -1.6
+                pid_sp_angle_l = 1.3 if not pillars else 1.3
+
+                kp = -8.5 if not pillars and not pillarOverride else -10.5
+
+                        
+                if object[0] == RIGHT and direction == 1 and object[1] < 200:
+                    steeringInputs += [weigths[wi][2] if not pillars else weigths[wi][2]*2]
+                if object[0] == LEFT and direction == 1:
+                    err = (pid_distance - object[1]) / 500 if quadrant > 0 else 0.0
+                    ang_err = intermediate_angle_radians(pid_sp_angle_r, object[2]) / (np.pi/2)
 
                     steeringInputs += [err * 4.5 + ang_err * -8.5]
-                if object[0] == LEFT and direction == -1 and object[1] < 200:
-                    steeringInputs += [weigths[wi][2]]
                 
-                if object[0] == BLOBRED and pillars:
-                    if object[3] < 800:
-                        steeringInputs += [weigths[wi][3]]
-                if object[0] == BLOBGREEN and pillars:
-                    if object[3] < 800:
-                        steeringInputs += [-weigths[wi][3]]
 
+                if object[0] == LEFT and direction == -1 and object[1] < 200:
+                    steeringInputs += [weigths[wi][2] if not pillars else weigths[wi][2]*2]
+                if object[0] == RIGHT and direction == -1:
+                    err = (pid_distance - object[1]) / 500 if quadrant > 0 else 0.0
+
+                    ang_err = intermediate_angle_radians(pid_sp_angle_l, object[2]) / (np.pi/2)
+                    print(ang_err, err)
+                    steeringInputs += [err * -4.5 + ang_err * -8.5]
 
             steer = np.sum(np.array(steeringInputs)) / 8
+            if pillarOverride:
+                pval = np.sum(np.array(steeringInputsP)) / 2
+                anti_pillaring += anti_pillaring * 0.75 + pval
+                steer = steer*0.75 + pval
+            else:
+                steer = steer + (-anti_pillaring*0.75)
+                # steer = steer * np.log(anti_pillaring)
+                anti_pillaring *= 0.07
+                print("ap:", anti_pillaring)
 
-            if (time.time_ns() // 1000000 - startTime) < start_override:
-                steer = direction
+            if (time.time_ns() // 1000000 - startTime) < start_override and not pillars:
+                steer = -direction*4
+            if start_override < (time.time_ns() // 1000000 - startTime) < start_override+350 and not pillars:
+                steer = direction*4
 
             steer = get_pos_percentage(steer)
             steer = 0.0 if np.isnan(steer) else steer
 
             integral_steering = integral_steering * 0.3 +  steer
-
+            pillarOverride = False
             try:
                 steering.value = steer
             except:
                 print("exceptional steering: ", steer)
 
-            if (integral_steering >= 0.90):
+            if (abs(integral_steering) >= 0.90):
                 if (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout:
                     print(f"Quadrant turend {(time.time_ns() // 1000000 - last_quadrant_at)}ms")
                     last_quadrant_at = time.time_ns() // 1000000

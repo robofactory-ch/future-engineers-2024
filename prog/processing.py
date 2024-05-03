@@ -81,7 +81,7 @@ def getContours(imgIn: np.ndarray, depth_data: np.ndarray):
                 z = estimatePillarDistance(h)
                 # print(f"pillar at d={z}")
 
-                processedContours.append([x, width, z])
+                processedContours.append([x, z, width])
     return processedContours
 
 

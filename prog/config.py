@@ -1,14 +1,15 @@
 from numpy import pi
 
-pillars = False
+pillars = True
 stopQuadrantsCount = 12
 
-speed = -0.075
+speed = -0.060
+# speed = -0.075
 
 redMin = (0, 90, 30)
 redMax = (6, 255, 255)
-greenMin = (40, 10, 10)
-greenMax = (90, 220, 150)
+greenMin = (25, 0, 0)
+greenMax = (80, 150, 30)
 
 houghparams = {
   'threshold': 70,
@@ -42,6 +43,6 @@ sterringMaxRight = 0.65
 steeringRange = abs(steeringMaxLeft-sterringMaxRight)
 
 new_center_timeout = 220
-new_quadrant_timeout = 1500
+new_quadrant_timeout = 4500
 
-start_override = 1250
+start_override = 1600
