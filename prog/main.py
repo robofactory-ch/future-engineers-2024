@@ -35,6 +35,7 @@ direction = 0
 async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     global redMax, redMin, greenMax, greenMin, direction
+    print("starting")
 
 
     running = True
@@ -42,6 +43,17 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     config = Config()
     config.set_align_mode(OBAlignMode.HW_MODE)
     pipeline = Pipeline()
+
+    try:
+        color_profile, depth_profile = get_profiles(pipeline)
+        config.enable_stream(color_profile)
+        config.enable_stream(depth_profile)
+
+    except Exception as e:
+        print(e)
+        return
+
+    pipeline.start(config)
 
     print("Ready")
 
@@ -62,17 +74,6 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     last_quadrant_at = time.time_ns() // 1000000 + 500
 
     motor.value = 0.06
-
-    try:
-        color_profile, depth_profile = get_profiles(pipeline)
-        config.enable_stream(color_profile)
-        config.enable_stream(depth_profile)
-
-    except Exception as e:
-        print(e)
-        return
-
-    pipeline.start(config)
 
     last_center_wall_at = time.time_ns() // 1000000
 
@@ -146,15 +147,18 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             for line in newLines:
                 x1, y1, x2, y2 = line
+
+                print("------")
+
                 d1 = estimateWallDistance(x1, y1)
                 d2 = estimateWallDistance(x2, y2)
 
-                u1 = (1 / np.sin(getCameraAzimuth(x1))) * d1
-                v1 = (1 / np.cos(getCameraAzimuth(x1))) * d1
+                u1 = (np.tan(getCameraAzimuth(x1))) * d1
+                v1 = d1
 
                 # print(u1, v1)
-                u2 = (1 / np.sin(getCameraAzimuth(x2))) * d2
-                v2 = (1 / np.cos(getCameraAzimuth(x2))) * d2
+                u2 = (np.tan(getCameraAzimuth(x2))) * d2
+                v2 = d2
 
                 A = (u2 - u1)
                 B = (v1 - v2)
@@ -165,6 +169,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 wall_dist = -1.0
                 if D != 0.0:
                     wall_dist = abs(C / D)
+                
+                # print("wall_dist", wall_dist)
                 
 
                 if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
