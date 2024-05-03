@@ -143,3 +143,13 @@ def estimatePillarDistance(h):
     # print(d)
 
     return d
+
+def intermediate_angle_radians(slope1_rad, slope2_rad):
+    # Calculate the angle between two lines using their slopes in radians
+    angle_radians = slope2_rad - slope1_rad
+    # Adjust the angle to be between -pi/2 and pi/2
+    while angle_radians <= -np.pi/2:
+        angle_radians += np.pi
+    while angle_radians > np.pi/2:
+        angle_radians -= np.pi
+    return -angle_radians

@@ -4,7 +4,7 @@ from pyorbbecsdk import Pipeline, FrameSet, Config, OBSensorType, OBAlignMode
 import cv2
 import numpy as np
 from utils import frame_to_bgr_image
-from processing import filter, getCameraAzimuth, getContours, findWallLines, estimateWallDistance
+from processing import filter, getCameraAzimuth, getContours, findWallLines, estimateWallDistance, intermediate_angle_radians
 import base64
 import json
 from gpiozero import Servo, InputDevice
@@ -76,6 +76,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     motor.value = 0.06
 
     last_center_wall_at = time.time_ns() // 1000000
+
 
     try:
         while running:
@@ -177,7 +178,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 
 
                 last_center_wall_at = time.time_ns() // 1000000
-                if -0.1 < wall_rotation < 0.1:
+                if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
                     classifiedobjects += [[CENTER, wall_dist]]
 
 
@@ -203,7 +204,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     direction = -1
                     print("[ROUNDDIRECTION SET CC]")
 
-            direction = 1
+            # direction = 1
                 
             steeringInputs = [0.00]
 
@@ -215,8 +216,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     #     running = False
                     #     print("RUN FINISHED")
                     print("center", object[1])
-                    if object[1] < 950:
-                        steeringInputs += [10 * direction]
+                    if object[1] < 1250:
+                        steeringInputs += [10]
 
                 if object[0] == RIGHT and direction == -1:
                     err = (abs(80 / 180 * np.pi - wall_rotation)) % np.pi / np.pi
@@ -226,11 +227,12 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                         
                 if object[0] == LEFT and direction == 1:
                     err = (320 - object[1]) / 500
-                    ang_err = (-1.5 - object[2]) / (np.pi/4)
+                    ang_err = intermediate_angle_radians(-1.6, object[2]) / (np.pi/2)
 
-                    print("PID L", object[2], ang_err *  -8)
+                    print("PID LD", object[1], err)
+                    print("PID L", object[2], ang_err)
 
-                    steeringInputs += [err * 5 + ang_err * -8.5]
+                    steeringInputs += [err * 4.5 + ang_err * -8.5]
                 if object[0] == LEFT and direction == -1 and object[1] < 200:
                     steeringInputs += [weigths[wi][2]]
                 
@@ -251,8 +253,6 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
 
             ang = steer*np.pi
-
-            viz = draw_steering_overlay(viz, ang)
             
             if (time.time_ns() // 1000000 - last_center_wall_at) > new_center_timeout:
                 print(f"{(time.time_ns() // 1000000 - last_center_wall_at)}ms not taking because timeout is at {(time.time_ns() // 1000000 - last_quadrant_at)}")

@@ -3,7 +3,7 @@ from numpy import pi
 pillars = False
 stopQuadrantsCount = 12
 
-speed = -0.065
+speed = -0.075
 
 redMin = (0, 90, 30)
 redMax = (6, 255, 255)
@@ -17,7 +17,7 @@ houghparams = {
 }
 
 centerstripheight = 80
-centerheight = 400 // 2 + 41
+centerheight = 400 // 2 + 40
 
 minContourSize = 800
 contourSizeConstant = 1
@@ -33,8 +33,8 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
-weigths = [[8, 3, 3, 11, -11],
-          [8, 3, 3, 11, -11],
+weigths = [[7, 3, 0, 11, -11],
+          [7, 3, 0, 11, -11],
          ]
 
 steeringMaxLeft = -0.88 # needs to be smaller
