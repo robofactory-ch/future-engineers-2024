@@ -143,8 +143,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             # for c in contoursR:
             #     classifiedobjects += [[BLOBRED, c[1], c[0], c[2]]]
             
-            seen_left_wall = False
-            seen_right_wall = False
+            mellowest_left = 90.0
+            mellowest_right = 90.0
             seen_center_wall = False
 
             for line in newLines:
@@ -188,20 +188,20 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 
                 elif (x1 + x2) / 2 - 320 > 0:
                     # print("right wall")
-                    seen_right_wall = True
+                    mellowest_right = min(np.arctan2(y2-y1, x2-x1), mellowest_left)
                     classifiedobjects += [[RIGHT, wall_dist, wall_rotation]]
                     # print("right wall at ", wall_dist)
                 else:
                     # print("left wall")
-                    seen_left_wall = True
+                    mellowest_left = min(np.arctan2(y2-y1, x2-x1), mellowest_left)
                     classifiedobjects += [[LEFT, wall_dist, wall_rotation]]
                     # print("left wall at  ", wall_dist)
             
             if direction == 0:
-                if seen_left_wall and not seen_right_wall:
+                if mellowest_left < mellowest_right and (mellowest_left + mellowest_right) < 179.0:
                     direction = 1
                     print("[ROUNDDIRECTION SET CW]")
-                if seen_right_wall and not seen_left_wall:
+                else:
                     direction = -1
                     print("[ROUNDDIRECTION SET CC]")
 
@@ -216,7 +216,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     if quadrant >= stopQuadrantsCount and object[1] < 2800 and (integral_steering <= 0.40):
                         running = False
                         print("RUN FINISHED")
-                    print("center", object[1])
+                    # print("center", object[1])
 
                     if object[1] < 1250:
                         steeringInputs += [10]
@@ -252,12 +252,11 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             steer = 0.0 if np.isnan(steer) else steer
 
             integral_steering = integral_steering * 0.3 +  steer
-            print(integral_steering)
 
             try:
                 steering.value = steer
             except:
-                print(steer)
+                print("exceptional steering: ", steer)
 
             if (integral_steering >= 0.90):
                 if (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout:
