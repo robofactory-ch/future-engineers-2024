@@ -64,7 +64,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     steering.value = get_pos_percentage(0)
     time.sleep(0.5)
 
-    startbutton = True
+    startbutton = False
     while not startbutton:
         startbutton =  pushbutton.is_active
         time.sleep(0.1)
@@ -77,6 +77,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     last_center_wall_at = time.time_ns() // 1000000
 
+    integral_steering = 0.0
 
     try:
         while running:
@@ -212,10 +213,11 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
-                    # if quadrant >= stopQuadrantsCount and object[1] < 1600:
-                    #     running = False
-                    #     print("RUN FINISHED")
+                    if quadrant >= stopQuadrantsCount and object[1] < 2800 and (integral_steering <= 0.40):
+                        running = False
+                        print("RUN FINISHED")
                     print("center", object[1])
+
                     if object[1] < 1250:
                         steeringInputs += [10]
 
@@ -229,8 +231,8 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     err = (320 - object[1]) / 500
                     ang_err = intermediate_angle_radians(-1.6, object[2]) / (np.pi/2)
 
-                    print("PID LD", object[1], err)
-                    print("PID L", object[2], ang_err)
+                    # print("PID LD", object[1], err)
+                    # print("PID L", object[2], ang_err)
 
                     steeringInputs += [err * 4.5 + ang_err * -8.5]
                 if object[0] == LEFT and direction == -1 and object[1] < 200:
@@ -246,17 +248,18 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             steer = np.sum(np.array(steeringInputs)) / 8
 
+            steer = get_pos_percentage(steer)
+            steer = 0.0 if np.isnan(steer) else steer
+
+            integral_steering = integral_steering * 0.3 +  steer
+            print(integral_steering)
+
             try:
-                steering.value = get_pos_percentage(steer)
+                steering.value = steer
             except:
-                print(get_pos_percentage(steer))
+                print(steer)
 
-
-            ang = steer*np.pi
-            
-            if (time.time_ns() // 1000000 - last_center_wall_at) > new_center_timeout:
-                print(f"{(time.time_ns() // 1000000 - last_center_wall_at)}ms not taking because timeout is at {(time.time_ns() // 1000000 - last_quadrant_at)}")
-
+            if (integral_steering >= 0.90):
                 if (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout:
                     print(f"Quadrant turend {(time.time_ns() // 1000000 - last_quadrant_at)}ms")
                     last_quadrant_at = time.time_ns() // 1000000
