@@ -81,7 +81,7 @@ def getContours(imgIn: np.ndarray, depth_data: np.ndarray):
                 z = estimatePillarDistance(h)
                 # print(f"pillar at d={z}")
 
-                processedContours.append([x, width, z])
+                processedContours.append([x, z, width])
     return processedContours
 
 
@@ -105,12 +105,19 @@ def estimateWallDistance(x, y):
 
     # print(1000 / (1/wallheight)) # calibration
 
-    distancefactor = 36000.0
+    distancefactor = 47000.0
     d = (1 / wallheight) * distancefactor
 
     # print(d)
 
     return d
+
+
+cx_angles = np.arange(-319.5, 320.5, 1, dtype="d")
+cx_angles = np.arctan2(cx_angles, 450)
+def getCameraAzimuth(x):
+    # print("angle deg:", cx_angles[x]/np.pi*180)
+    return float(cx_angles[x])
 
 def estimatePillarDistance(h):
     """
@@ -136,3 +143,13 @@ def estimatePillarDistance(h):
     # print(d)
 
     return d
+
+def intermediate_angle_radians(slope1_rad, slope2_rad):
+    # Calculate the angle between two lines using their slopes in radians
+    angle_radians = slope2_rad - slope1_rad
+    # Adjust the angle to be between -pi/2 and pi/2
+    while angle_radians <= -np.pi/2:
+        angle_radians += np.pi
+    while angle_radians > np.pi/2:
+        angle_radians -= np.pi
+    return -angle_radians

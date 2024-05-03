@@ -1,14 +1,15 @@
 from numpy import pi
 
-pillars = False
+pillars = True
 stopQuadrantsCount = 12
 
-speed = -0.065
+speed = -0.060
+# speed = -0.075
 
 redMin = (0, 90, 30)
 redMax = (6, 255, 255)
-greenMin = (40, 10, 10)
-greenMax = (90, 220, 150)
+greenMin = (25, 0, 0)
+greenMax = (80, 150, 30)
 
 houghparams = {
   'threshold': 70,
@@ -17,7 +18,7 @@ houghparams = {
 }
 
 centerstripheight = 80
-centerheight = 400 // 2 + 28
+centerheight = 400 // 2 + 40
 
 minContourSize = 800
 contourSizeConstant = 1
@@ -33,8 +34,8 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
-weigths = [[-1.35, -1.15, 1.5, 11, -11],
-          [-1.5, 1.15, 1.35, 11, -11],
+weigths = [[7, 3, 0, 11, -11],
+          [7, 3, 0, 11, -11],
          ]
 
 steeringMaxLeft = -0.88 # needs to be smaller
@@ -42,4 +43,6 @@ sterringMaxRight = 0.65
 steeringRange = abs(steeringMaxLeft-sterringMaxRight)
 
 new_center_timeout = 220
-new_quadrant_timeout = 650
+new_quadrant_timeout = 4500
+
+start_override = 1600
