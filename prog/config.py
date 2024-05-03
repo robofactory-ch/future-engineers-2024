@@ -43,3 +43,5 @@ steeringRange = abs(steeringMaxLeft-sterringMaxRight)
 
 new_center_timeout = 220
 new_quadrant_timeout = 1500
+
+start_override = 1250

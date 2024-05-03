@@ -95,6 +95,9 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             if color_frame is None or depth_frame is None:
                 continue
+
+            if time.time_ns() // 1000000 - startTime < 1000:
+                continue
             
             color_image = np.flip(frame_to_bgr_image(color_frame), 0)
             depth_data = np.flip(np.flip(process_depth_frame(depth_frame), 0), 1)
@@ -188,16 +191,17 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 
                 elif (x1 + x2) / 2 - 320 > 0:
                     # print("right wall")
-                    mellowest_right = min(np.arctan2(y2-y1, x2-x1), mellowest_left)
+                    mellowest_right = min(abs(np.arctan2(y2-y1, x2-x1)), mellowest_right)
                     classifiedobjects += [[RIGHT, wall_dist, wall_rotation]]
                     # print("right wall at ", wall_dist)
                 else:
                     # print("left wall")
-                    mellowest_left = min(np.arctan2(y2-y1, x2-x1), mellowest_left)
+                    mellowest_left = min(abs(np.arctan2(y2-y1, x2-x1)), mellowest_left)
                     classifiedobjects += [[LEFT, wall_dist, wall_rotation]]
                     # print("left wall at  ", wall_dist)
             
             if direction == 0:
+                print(mellowest_left, mellowest_right)
                 if mellowest_left < mellowest_right and (mellowest_left + mellowest_right) < 179.0:
                     direction = 1
                     print("[ROUNDDIRECTION SET CW]")
@@ -247,6 +251,9 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
 
             steer = np.sum(np.array(steeringInputs)) / 8
+
+            if (time.time_ns() // 1000000 - startTime) < start_override:
+                steer = direction
 
             steer = get_pos_percentage(steer)
             steer = 0.0 if np.isnan(steer) else steer
