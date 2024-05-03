@@ -23,8 +23,8 @@ BLOBRED = 2
 BLOBGREEN = -2
 
 def get_pos_percentage(perc):
-  perc = min(max(perc, -1), 1) / 2 + 0.5
-  return steeringMaxLeft + steeringRange*perc
+  perc = min(max(perc, -0.9999), 0.9999) / 2 + 0.5
+  return min(max(steeringMaxLeft + steeringRange*perc, -0.9999), 0.9999)
 
 steering = Servo("GPIO12", initial_value=get_pos_percentage(0))
 motor = Servo("GPIO13", initial_value=0.06)
@@ -136,10 +136,10 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
             classifiedobjects = []
 
-            for c in contoursG:
-                classifiedobjects += [[BLOBGREEN, c[1], c[0], c[2]]]
-            for c in contoursR:
-                classifiedobjects += [[BLOBRED, c[1], c[0], c[2]]]
+            # for c in contoursG:
+            #     classifiedobjects += [[BLOBGREEN, c[1], c[0], c[2]]]
+            # for c in contoursR:
+            #     classifiedobjects += [[BLOBRED, c[1], c[0], c[2]]]
             
             seen_left_wall = False
             seen_right_wall = False
@@ -148,7 +148,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             for line in newLines:
                 x1, y1, x2, y2 = line
 
-                print("------")
+                # print("------")
 
                 d1 = estimateWallDistance(x1, y1)
                 d2 = estimateWallDistance(x2, y2)
@@ -170,27 +170,30 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 if D != 0.0:
                     wall_dist = abs(C / D)
                 
+                wall_rotation = np.arctan2(B, A)
+                # print(wall_rotation)
+                
                 # print("wall_dist", wall_dist)
                 
 
-                if -0.05 < np.arctan2(y2-y1, x2-x1) < 0.05:
+                last_center_wall_at = time.time_ns() // 1000000
+                if -0.1 < wall_rotation < 0.1:
                     classifiedobjects += [[CENTER, wall_dist]]
 
 
-                    last_center_wall_at = time.time_ns() // 1000000
                     seen_center_wall = True
-                    print("center wall at", wall_dist)
+                    # print("center wall at", wall_dist)
                 
                 elif (x1 + x2) / 2 - 320 > 0:
                     # print("right wall")
                     seen_right_wall = True
-                    classifiedobjects += [[RIGHT, wall_dist]]
-                    print("right wall at ", wall_dist)
+                    classifiedobjects += [[RIGHT, wall_dist, wall_rotation]]
+                    # print("right wall at ", wall_dist)
                 else:
                     # print("left wall")
                     seen_left_wall = True
-                    classifiedobjects += [[LEFT, wall_dist]]
-                    print("left wall at  ", wall_dist)
+                    classifiedobjects += [[LEFT, wall_dist, wall_rotation]]
+                    # print("left wall at  ", wall_dist)
             
             if direction == 0:
                 if seen_left_wall and not seen_right_wall:
@@ -200,26 +203,36 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     direction = -1
                     print("[ROUNDDIRECTION SET CC]")
 
+            direction = 1
                 
-            steeringInputs = []
+            steeringInputs = [0.00]
 
             for object in classifiedobjects:
-                wall_scalar = 1/(object[1]/3800)
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
-                    if quadrant >= stopQuadrantsCount and object[1] < 1600:
-                        running = False
-                        print("RUN FINISHED")
-                    if object[1] < 800:
-                        steeringInputs += [weigths[wi][0]*wall_scalar]
+                    # if quadrant >= stopQuadrantsCount and object[1] < 1600:
+                    #     running = False
+                    #     print("RUN FINISHED")
+                    print("center", object[1])
+                    if object[1] < 950:
+                        steeringInputs += [10 * direction]
 
-                if object[0] == RIGHT:
-                    if object[1] < 1200:
-                        steeringInputs += [weigths[wi][1]*wall_scalar]
-                if object[0] == LEFT:
-                    if object[1] < 1200:
-                        steeringInputs += [weigths[wi][2]*wall_scalar]
+                if object[0] == RIGHT and direction == -1:
+                    err = (abs(80 / 180 * np.pi - wall_rotation)) % np.pi / np.pi
+                    steeringInputs += [weigths[wi][1] * err]
+                if object[0] == RIGHT and direction == 1 and object[1] < 200:
+                    steeringInputs += [weigths[wi][2]]
+                        
+                if object[0] == LEFT and direction == 1:
+                    err = (320 - object[1]) / 500
+                    ang_err = (-1.5 - object[2]) / (np.pi/4)
+
+                    print("PID L", object[2], ang_err *  -8)
+
+                    steeringInputs += [err * 5 + ang_err * -8.5]
+                if object[0] == LEFT and direction == -1 and object[1] < 200:
+                    steeringInputs += [weigths[wi][2]]
                 
                 if object[0] == BLOBRED and pillars:
                     if object[3] < 800:
@@ -228,9 +241,13 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     if object[3] < 800:
                         steeringInputs += [-weigths[wi][3]]
 
-            steer = np.sum(np.array(steeringInputs)) / 16.0
 
-            steering.value = get_pos_percentage(steer)
+            steer = np.sum(np.array(steeringInputs)) / 8
+
+            try:
+                steering.value = get_pos_percentage(steer)
+            except:
+                print(get_pos_percentage(steer))
 
 
             ang = steer*np.pi
@@ -290,27 +307,6 @@ def process_depth_frame(depth_frame):
     # depth_image = cv2.applyColorMap(depth_image, cv2.COLORMAP_JET)
 
     return depth_data
-
-def draw_steering_overlay(image, steering_angle):
-    # Define colors
-    white = (255, 255, 255)
-    green = (0, 255, 0)
-    red = (0, 0, 255)
-    
-    # Calculate angle position on the image
-    center = (image.shape[1] // 2, image.shape[0])
-    angle_radius = min(image.shape[0], image.shape[1]) // 4
-    angle_length = 50
-    angle_rad = steering_angle
-    end_point = (int(center[0] + angle_radius * np.sin(angle_rad)), int(center[1] - angle_radius * np.cos(angle_rad)))
-    end_point2 = (int(end_point[0] + angle_length * np.cos(angle_rad)), int(end_point[1] + angle_length * np.sin(angle_rad)))
-
-    # Draw steering angle overlay
-    cv2.circle(image, center, angle_radius, green, 2)
-    cv2.arrowedLine(image, center, end_point, red, 2)
-
-    return image
-
 
 
 def encode_image(image):

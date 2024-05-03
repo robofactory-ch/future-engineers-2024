@@ -17,7 +17,7 @@ houghparams = {
 }
 
 centerstripheight = 80
-centerheight = 400 // 2 + 28
+centerheight = 400 // 2 + 41
 
 minContourSize = 800
 contourSizeConstant = 1
@@ -33,8 +33,8 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
-weigths = [[-1.35, -1.15, 1.5, 11, -11],
-          [-1.5, 1.15, 1.35, 11, -11],
+weigths = [[8, 3, 3, 11, -11],
+          [8, 3, 3, 11, -11],
          ]
 
 steeringMaxLeft = -0.88 # needs to be smaller
