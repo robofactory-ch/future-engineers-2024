@@ -166,7 +166,8 @@ Dieser Wert wird dann auf das geschlossene intervall $[-1;1]$ normalisiert. Der 
 \subsection{Ende der Runde}
 
 Um am Ende der Runde im Startbereich stoppen zu können, zählen wir, wie oft wir um eine Ecke biegen.
-Dies funktioniert, da während des Umfahrens einer Ecke keine mittleren Wände erkannt werden. Wir während mehr als ca. 600ms keine mittlere Wand erkannt, zählen wir um eins hoch. Erreicht der Zähler $\geq 12$ und das Auto sieht eine mittlere Wand $\le 1600$mm vor sich, beendet es den Lauf automatisch.
+Mittels Auswerten der an den Roboter ausgegebenen Steuersignale wird eine Ecke identifiziert und eine Variable wird um eins erhöht.
+Sobald diese Variable 12 erreicht wird der Lauf im nächsten geraden Bereich gestoppt. 
 \subsection{Programmierung}
 
 Bei der Programmierung setzen wir auf Python. Wir setzten ausserdem extensiv auf die Pakete opencv-python sowie NumPy.
