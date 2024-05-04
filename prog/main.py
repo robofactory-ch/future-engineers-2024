@@ -32,11 +32,15 @@ pushbutton = InputDevice("GPIO10")
 
 direction = 0
 
-async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
+# async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
+def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
     global redMax, redMin, greenMax, greenMin, direction
     print("starting")
 
+    while not pushbutton.is_active:
+        time.sleep(0.1)
+    time.sleep(2)
 
     running = True
 
@@ -64,7 +68,7 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
     steering.value = get_pos_percentage(0)
     time.sleep(0.5)
 
-    startbutton = True
+    startbutton = False
     while not startbutton:
         startbutton =  pushbutton.is_active
         time.sleep(0.1)
@@ -240,20 +244,20 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 wi = 0 if direction <= 0 else 1
 
                 if object[0] == CENTER:
-                    if quadrant >= stopQuadrantsCount and object[1] < 2300 and (integral_steering <= 0.30) and (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout / 3 and not pillars:
+                    if quadrant >= stopQuadrantsCount and object[1] < 1600 and (integral_steering <= 0.05) and (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout / 1.25 and not pillars:
                         running = False
                         print("RUN FINISHED")
                     print("center", object[1])
 
-                    if object[1] < 1175 and not pillars:
+                    if object[1] < 1050 and not pillars:
                         steeringInputs += [10 * direction]
-                    if object[1] < 2000 and pillars:
+                    if object[1] < 1800 and pillars:
                         steeringInputs += [5 * direction]
                         
 
                         
                 pid_distance = 320 if not pillars else 370
-                pid_sp_angle_r = -1.6 if not pillars else -1.6
+                pid_sp_angle_r = -1.5 if not pillars else -1.5
                 pid_sp_angle_l = 1.3 if not pillars else 1.3
 
                 kp = -8.5 if not pillars and not pillarOverride else -10.5
@@ -296,14 +300,14 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
             steer = get_pos_percentage(steer)
             steer = 0.0 if np.isnan(steer) else steer
 
-            integral_steering = integral_steering * 0.3 +  steer
+            integral_steering = integral_steering * 0.35 +  steer
             pillarOverride = False
             try:
                 steering.value = steer
             except:
                 print("exceptional steering: ", steer)
 
-            if (abs(integral_steering) >= 0.90):
+            if (abs(integral_steering) >= 0.75):
                 if (time.time_ns() // 1000000 - last_quadrant_at) > new_quadrant_timeout:
                     print(f"Quadrant turend {(time.time_ns() // 1000000 - last_quadrant_at)}ms")
                     last_quadrant_at = time.time_ns() // 1000000
@@ -322,7 +326,14 @@ async def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                 "a": a_b64,
                 # "b": b_b64
             }
-            await websocket.send(json.dumps(data))
+            if websocket:
+                pass
+                # await websocket.send(json.dumps(data))
+
+            if pushbutton.is_active:
+                running = False
+                print("KILLED PUSHBUTTON")
+
             
     except KeyboardInterrupt:
         pass
@@ -367,8 +378,9 @@ def encode_depth(depth_data):
     base64_str = base64.b64encode(buffer).decode('utf-8')
     return base64_str
 
-
-start_server = websockets.serve(image_stream, "0.0.0.0", 8765)
-asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
-
+if not headless:
+    start_server = websockets.serve(image_stream, "0.0.0.0", 8765)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()
+else:
+    image_stream(None, None)

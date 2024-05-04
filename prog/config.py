@@ -1,10 +1,11 @@
 from numpy import pi
 
-pillars = True
+pillars = False
 stopQuadrantsCount = 12
+headless = True
 
-speed = -0.060
-# speed = -0.075
+# speed = -0.060
+speed = -0.070
 
 redMin = (0, 90, 30)
 redMax = (6, 255, 255)
@@ -18,7 +19,7 @@ houghparams = {
 }
 
 centerstripheight = 80
-centerheight = 400 // 2 + 40
+centerheight = 400 // 2 + 38
 
 minContourSize = 800
 contourSizeConstant = 1
