@@ -21,7 +21,7 @@
 
       // Function to connect to the WebSocket server
       function connectWebSocket() {
-        ws = new WebSocket("ws://192.168.178.199:8765");
+        ws = new WebSocket("ws://car.local:8765");
 
         // Event handler for receiving messages from the server
         ws.onmessage = function (event) {

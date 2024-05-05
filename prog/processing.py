@@ -135,7 +135,7 @@ def estimatePillarDistance(h):
     """
     if (h <= 2): return np.Inf
 
-    # print(1000 / (1/h)) # calibration
+    print(1000 / (1/h)) # calibration
 
     distancefactor = 47000.0
     d = (1 / h) * distancefactor

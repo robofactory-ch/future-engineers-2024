@@ -1,16 +1,16 @@
 from numpy import pi
 
-pillars = False
+pillars = True
 stopQuadrantsCount = 12
 headless = True
 
-# speed = -0.060
-speed = -0.070
+speed = -0.065
+# speed = -0.10
 
 redMin = (0, 90, 30)
-redMax = (6, 255, 255)
-greenMin = (25, 0, 0)
-greenMax = (80, 150, 30)
+redMax = (8, 255, 255)
+greenMin = (20, 0, 0)
+greenMax = (130, 255, 120)
 
 houghparams = {
   'threshold': 70,
@@ -19,7 +19,7 @@ houghparams = {
 }
 
 centerstripheight = 80
-centerheight = 400 // 2 + 38
+centerheight = 400 // 2 + 39
 
 minContourSize = 800
 contourSizeConstant = 1
@@ -35,8 +35,8 @@ colorIntrinsics = [71.5 / 180 * pi, 56.7 / 180 * pi, ]
 grayThresh = 25
 
 
-weigths = [[7, 3, 0, 11, -11],
-          [7, 3, 0, 11, -11],
+weigths = [[7, 3, 2, 11, -11],
+          [7, 3, 2, 11, -11],
          ]
 
 steeringMaxLeft = -0.88 # needs to be smaller

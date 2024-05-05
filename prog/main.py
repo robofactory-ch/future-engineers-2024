@@ -230,15 +230,15 @@ def image_stream(websocket: websockets.WebSocketServerProtocol, path):
                     if redgreen == BLOBRED:
                         # red
                         print(y)
-                        if y < 1200:
-                            steeringInputsP += [9 * float(x)/640.0]
+                        if y < 900:
+                            steeringInputsP += [8 * float(x)/640.0]
                             pillarOverride = True
                     else:
                         # green
-                        if y < 1200:
+                        if y < 1000:
                             
                             pillarOverride = True
-                            steeringInputsP += [-9 * float(640-x)/640.0]
+                            steeringInputsP += [-8 * float(640-x)/640.0]
             steeringInputs = [0.00]
             for object in classifiedobjects:
                 wi = 0 if direction <= 0 else 1
@@ -251,25 +251,25 @@ def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
                     if object[1] < 1050 and not pillars:
                         steeringInputs += [10 * direction]
-                    if object[1] < 1800 and pillars:
-                        steeringInputs += [5 * direction]
+                    if object[1] < 1050 and pillars:
+                        steeringInputs += [6.5 * direction]
                         
 
                         
-                pid_distance = 320 if not pillars else 370
+                pid_distance = 320 if not pillars else 360
                 pid_sp_angle_r = -1.5 if not pillars else -1.5
                 pid_sp_angle_l = 1.3 if not pillars else 1.3
 
-                kp = -8.5 if not pillars and not pillarOverride else -10.5
+                kp = -8.5 if not pillars and not pillarOverride else -10
 
-                        
+                         
                 if object[0] == RIGHT and direction == 1 and object[1] < 200:
-                    steeringInputs += [weigths[wi][2] if not pillars else weigths[wi][2]*2]
+                    steeringInputs += [weigths[wi][2] if not pillars else -weigths[wi][2]*2]
                 if object[0] == LEFT and direction == 1:
                     err = (pid_distance - object[1]) / 500 if quadrant > 0 else 0.0
                     ang_err = intermediate_angle_radians(pid_sp_angle_r, object[2]) / (np.pi/2)
 
-                    steeringInputs += [err * 4.5 + ang_err * -8.5]
+                    steeringInputs += [err * 4.5 + ang_err * kp]
                 
 
                 if object[0] == LEFT and direction == -1 and object[1] < 200:
@@ -279,15 +279,15 @@ def image_stream(websocket: websockets.WebSocketServerProtocol, path):
 
                     ang_err = intermediate_angle_radians(pid_sp_angle_l, object[2]) / (np.pi/2)
                     print(ang_err, err)
-                    steeringInputs += [err * -4.5 + ang_err * -8.5]
+                    steeringInputs += [err * -4.5 + ang_err * kp]
 
             steer = np.sum(np.array(steeringInputs)) / 8
             if pillarOverride:
                 pval = np.sum(np.array(steeringInputsP)) / 2
                 anti_pillaring += anti_pillaring * 0.75 + pval
-                steer = steer*0.75 + pval
+                steer = steer*0.85 + pval
             else:
-                steer = steer + (-anti_pillaring*0.75)
+                steer = steer + (-anti_pillaring*0.65)
                 # steer = steer * np.log(anti_pillaring)
                 anti_pillaring *= 0.07
                 print("ap:", anti_pillaring)
